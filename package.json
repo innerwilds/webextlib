@@ -4,6 +4,7 @@
   "description": "The lib for TSRAuto",
   "main": "lib/index.cjs.js",
   "types": "types/index.d.ts",
+  "module": "lib/index.esm.js",
   "files": [
     "lib",
     "types"
