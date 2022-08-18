@@ -1,7 +1,7 @@
 {
   "name": "tsr-auto-library",
   "version": "1.0.0",
-  "description": "",
+  "description": "The lib for TSRAuto",
   "main": "lib/index.cjs.js",
   "types": "types/index.d.ts",
   "files": [
@@ -20,8 +20,8 @@
     "postpublish": "if exist node_modules rmdir /S /Q node_modules && if exist package-lock.json rmdir /S /Q package-lock.json && pnpm i"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "aflyyyka",
+  "license": "MIT",
   "devDependencies": {
     "@types/webextension-polyfill": "^0.9.0",
     "@rollup/plugin-typescript": "^8.3.4",
