@@ -1,0 +1,15 @@
+{
+  "include": ["src"],
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM"],
+    "baseUrl": "./src",
+    "target": "ESNext",
+    "outDir": "lib/",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
+  },
+  "typeAcquisition": {
+    "enable": true
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "include": ["src"],
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM"],
+    "baseUrl": "./src",
+    "target": "ESNext",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "declaration": true,
+    "declarationDir": "types/",
+    "emitDeclarationOnly": true,
+  }
+}
+
