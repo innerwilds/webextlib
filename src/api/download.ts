@@ -4,6 +4,7 @@ import ModItem from '../entities/mod-item';
 import { StoredList } from '../core/stored-list';
 import browser from 'webextension-polyfill';
 import { createMessage, Status } from '../core/message';
+import { IMessage } from '../types';
 
 const [sendDownloadEvent, streamDownloadEvents] = createMessage<ModItem, void>('DownloadEvents');
 const [sendDownloadAll, streamDownloadAll] = createMessage<void, void>('DownloadAll');

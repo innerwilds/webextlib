@@ -1,5 +1,7 @@
 import { Runtime } from 'webextension-polyfill';
 import browser from 'webextension-polyfill';
+import type { ICoreMessage, ICreateMessage, IMessage, IMessageStream, IResponse, ISendMessage } from '../types';
+import { Status } from '../const';
 
 const keys = new Set();
 
@@ -9,13 +11,6 @@ const createMessage: ICreateMessage = function <T, R>(key: string) {
   }
   return [createSendMessage<T, R>(key), createMessageStream(key)];
 };
-
-enum Status {
-  Success,
-  Error,
-  Yes,
-  No,
-}
 
 const createMessageStream = <T, R>(key: string): IMessageStream<T, R> => {
   const fns: ((message: IMessage<T, R>) => void)[] = [];

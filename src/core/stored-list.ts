@@ -1,4 +1,5 @@
 import { isArray, XEventTarget } from 'deflib';
+import { IList } from '../types';
 import { Storage } from 'webextension-polyfill';
 
 export interface IStorageUpdated<T> {
@@ -18,7 +19,7 @@ export class StoredList<T> implements IList<T> {
   private storage: Storage.StorageArea;
   private items: T[];
   private initialized: boolean;
-  private saveTimeoutId: number | void;
+  private saveTimeoutId: number | null;
   private timeoutTime: number;
 
   public onAdded: XEventTarget<IStorageUpdated<T>>;
@@ -86,7 +87,8 @@ export class StoredList<T> implements IList<T> {
 
   private async save(): Promise<void> {
     if (this.saveTimeoutId) {
-      this.saveTimeoutId = clearTimeout(this.saveTimeoutId);
+      clearTimeout(this.saveTimeoutId);
+      this.saveTimeoutId = null;
       this.timeoutTime -= 250; // Чем больше несохранено, тем выше риски потерять данные.
     }
 
@@ -157,8 +159,14 @@ export class StoredList<T> implements IList<T> {
     return this.items.findIndex((item) => predicate(item)) > -1;
   }
 
-  public findByPredicate(predicate: (value: T) => boolean): T {
-    return this.items.find((item) => predicate(item));
+  public findByPredicate(predicate: (value: T) => boolean): T | null {
+    const result = this.items.find((item) => predicate(item));
+
+    if (result) {
+      return result;
+    }
+
+    return null;
   }
 
   public update(predicate: (value: T) => boolean, update: (value: Readonly<T>) => T) {

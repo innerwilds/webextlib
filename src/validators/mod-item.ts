@@ -1,3 +1,4 @@
+import { IValidator } from '../types';
 import ModItem from '../entities/mod-item';
 
 const ModItemValidator: IValidator<ModItem> = {

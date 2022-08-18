@@ -2,12 +2,17 @@
   "include": ["src"],
   "compilerOptions": {
     "lib": ["ESNext", "DOM"],
-    "baseUrl": "./src",
     "target": "ESNext",
     "outDir": "lib/",
     "moduleResolution": "node",
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "module": "es2015",
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "sourceMap": true,
+    "strict": true,
+    "skipLibCheck": true
   },
   "typeAcquisition": {
     "enable": true

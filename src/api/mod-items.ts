@@ -4,6 +4,7 @@ import { StoredList, IStorageUpdated } from '../core/stored-list';
 import browser from 'webextension-polyfill';
 import { createMessage, Status } from '../core/message';
 import ModItemValidator from '../validators/mod-item';
+import { IMessage } from '../types';
 
 const [sendSaveModItem, streamSaveModItem] = createMessage<ModItem, boolean>('SaveModItem');
 const [sendDeleteModItem, streamDeleteModItem] = createMessage<number, boolean>('DeleteModItem');
@@ -60,7 +61,7 @@ class ModItemsAPI {
 
     const modItem = new ModItem(data);
     const { items } = this;
-    const predicate = (mod) => mod.id === modItem.id;
+    const predicate = (mod: ModItem) => mod.id === modItem.id;
 
     if (items.includesByPredicate(predicate)) items.update(predicate, (mod) => modItem);
     else items.append(modItem);

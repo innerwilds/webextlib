@@ -1,8 +1,11 @@
-interface IValidator<T> {
+import { Runtime } from "webextension-polyfill";
+import { Status } from "./const";
+
+export interface IValidator<T> {
   validate(value: T): boolean;
 }
 
-interface IList<T> {
+export interface IList<T> {
   append(value: T): boolean;
   clear(value: T): void;
 
@@ -13,38 +16,38 @@ interface IList<T> {
   removeByPredicate(predicate: (value: T) => boolean): number;
   removeSingleByPredicate(predicate: (value: T) => boolean): boolean;
 
-  findByPredicate(predicate: (value: T) => boolean): T;
+  findByPredicate(predicate: (value: T) => boolean): T | null;
 
   [Symbol.iterator](): Iterator<T>;
 }
 
-interface IMessage<T, R> {
+export interface IMessage<T, R> {
   sendResponse(data: R): void;
-  sendStatus(status: import("./core/message").Status, error?: Error): void;
+  sendStatus(status: Status, error?: Error): void;
   data: T;
-  sender: import("webextension-polyfill").Runtime.MessageSender;
+  sender: Runtime.MessageSender;
 }
 
-interface IResponse<T> {
+export interface IResponse<T> {
   data?: T;
   error?: Error;
-  status: import("./core/message").Status;
+  status: Status;
 }
 
-interface ICoreMessage<T> {
+export interface ICoreMessage<T> {
   key: string;
   data: T;
 }
 
-interface ICreateMessage {
+export interface ICreateMessage {
   <T, R>(key: string): [ISendMessage<T, R>, IMessageStream<T, R>];
 }
 
-interface ISendMessage<T, R> {
+export interface ISendMessage<T, R> {
   (data: T, tabId?: number): Promise<IResponse<R>>;
 }
 
-interface IMessageStream<T, R> {
+export interface IMessageStream<T, R> {
   subscribe(fn: (message: IMessage<T, R>) => void): void;
   unsubscribe(fn: (message: IMessage<T, R>) => void): void;
 }
