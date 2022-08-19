@@ -1,25 +1,7 @@
-import { Runtime } from "webextension-polyfill";
+import { Browser, Runtime } from "webextension-polyfill";
 import { Status } from "./const";
 
-export interface IValidator<T> {
-  validate(value: T): boolean;
-}
-
-export interface IList<T> {
-  append(value: T): boolean;
-  clear(value: T): void;
-
-  includes(value: T): boolean;
-  includesByPredicate(predicate: (value: T) => boolean): boolean;
-
-  remove(value: T): boolean;
-  removeByPredicate(predicate: (value: T) => boolean): number;
-  removeSingleByPredicate(predicate: (value: T) => boolean): boolean;
-
-  findByPredicate(predicate: (value: T) => boolean): T | null;
-
-  [Symbol.iterator](): Iterator<T>;
-}
+declare var browser: Browser;
 
 export interface IMessage<T, R> {
   sendResponse(data: R): void;

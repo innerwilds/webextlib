@@ -1,5 +1,4 @@
-import { isArray, XEventTarget } from 'deflib';
-import { IList } from '../types';
+import { isArray, XEventTarget, IList } from 'deflib';
 import { Storage } from 'webextension-polyfill';
 
 export interface IStorageUpdated<T> {

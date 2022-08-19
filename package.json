@@ -1,6 +1,6 @@
 {
-  "name": "tsr-auto-library",
-  "version": "1.0.1",
+  "name": "webextension-library",
+  "version": "1.0.0",
   "description": "The lib for TSRAuto",
   "main": "lib/index.cjs.js",
   "types": "types/index.d.ts",
@@ -35,6 +35,6 @@
   },
   "dependencies": {
     "@rollup/plugin-node-resolve": "^13.3.0",
-    "deflib": "^1.0.5"
+    "deflib": "^1.0.0"
   }
 }

@@ -1,5 +1,4 @@
-import { Runtime } from 'webextension-polyfill';
-import browser from 'webextension-polyfill';
+import type { Runtime } from 'webextension-polyfill';
 import type { ICoreMessage, ICreateMessage, IMessage, IMessageStream, IResponse, ISendMessage } from '../types';
 import { Status } from '../const';
 
