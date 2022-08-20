@@ -1,7 +1,8 @@
 import { isArray, XEventTarget, IList } from 'deflib';
 import { Storage } from 'webextension-polyfill';
 
-export interface IStorageUpdated<T> {
+export interface IStoredListChangeInfo<T> {
+  name: string;
   added?: T;
   removed?: T;
   cleared?: T[];
@@ -22,11 +23,11 @@ export class StoredList<T> implements IList<T> {
   private timeoutTime: number;
   private deleted: boolean;
 
-  public onAdded: XEventTarget<IStorageUpdated<T>>;
-  public onRemoved: XEventTarget<IStorageUpdated<T>>;
-  public onUpdated: XEventTarget<IStorageUpdated<T>>;
-  public onCleared: XEventTarget<IStorageUpdated<T>>;
-  public onDeleted: XEventTarget<void>;
+  public onAdded: XEventTarget<IStoredListChangeInfo<T>>;
+  public onRemoved: XEventTarget<IStoredListChangeInfo<T>>;
+  public onUpdated: XEventTarget<IStoredListChangeInfo<T>>;
+  public onCleared: XEventTarget<IStoredListChangeInfo<T>>;
+  public onDeleted: XEventTarget<IStoredListChangeInfo<T>>;
   //#endregion
 
   //#region Init
@@ -40,11 +41,11 @@ export class StoredList<T> implements IList<T> {
 
     this.items = [];
 
-    this.onAdded = new XEventTarget<IStorageUpdated<T>>();
-    this.onRemoved = new XEventTarget<IStorageUpdated<T>>();
-    this.onUpdated = new XEventTarget<IStorageUpdated<T>>();
-    this.onCleared = new XEventTarget<IStorageUpdated<T>>();
-    this.onDeleted = new XEventTarget();
+    this.onAdded = new XEventTarget<IStoredListChangeInfo<T>>();
+    this.onRemoved = new XEventTarget<IStoredListChangeInfo<T>>();
+    this.onUpdated = new XEventTarget<IStoredListChangeInfo<T>>();
+    this.onCleared = new XEventTarget<IStoredListChangeInfo<T>>();
+    this.onDeleted = new XEventTarget<IStoredListChangeInfo<T>>();
   }
 
   public async init(): Promise<void> {
@@ -135,7 +136,7 @@ export class StoredList<T> implements IList<T> {
     }
     this.items.push(item);
     this.save();
-    this.onAdded.dispatch({ added: item });
+    this.onAdded.dispatch({ name: this.name, added: item });
     return true;
   }
 
@@ -148,7 +149,7 @@ export class StoredList<T> implements IList<T> {
     if (index === -1) return false;
     this.items.splice(index, 1);
     this.save();
-    this.onRemoved.dispatch({ removed: item });
+    this.onRemoved.dispatch({ name: this.name, removed: item });
     return true;
   }
 
@@ -157,12 +158,13 @@ export class StoredList<T> implements IList<T> {
       throw new TypeError("Stored list " + this.name + " is deleted.");
     }
     
+    const {items} = this;
+
     let index: number;
     let count = 0;
-    while ((index = this.items.findIndex((item) => predicate(item))) > -1) {
-      const lock = this.items[index];
-      this.onRemoved.dispatch({ removed: lock });
-      this.items.splice(index, 1);
+
+    while ((index = items.findIndex((item) => predicate(item))) > -1) {
+      this.remove(items[index]);
       count++;
     }
     this.save();
@@ -176,10 +178,7 @@ export class StoredList<T> implements IList<T> {
     
     const index = this.items.findIndex((item) => predicate(item));
     if (index === -1) return false;
-    const lock = this.items[index];
-    this.items.splice(index, 1);
-    this.save();
-    this.onRemoved.dispatch({ removed: lock });
+    this.remove(this.items[index]);
     return true;
   }
 
@@ -191,7 +190,7 @@ export class StoredList<T> implements IList<T> {
     const lock = [...this.items];
     this.items.length = 0;
     this.save();
-    this.onCleared.dispatch({ cleared: lock });
+    this.onCleared.dispatch({ name: this.name, cleared: lock });
   }
 
   public includes(item: T): boolean {
@@ -237,7 +236,7 @@ export class StoredList<T> implements IList<T> {
       if (toUpdate) {
         const previous = items[index];
         const newItem = (items[index] = update(Object.freeze(item)));
-        this.onUpdated.dispatch({ updated: { new: newItem, old: previous } });
+        this.onUpdated.dispatch({ name: this.name, updated: { new: newItem, old: previous } });
       }
       index++;
     }
@@ -262,6 +261,6 @@ export class StoredList<T> implements IList<T> {
     
     this.deleted = true;
     this.storage.remove(this.name);
-    this.onDeleted.dispatch();
+    this.onDeleted.dispatch({ name: this.name });
   }
 }
