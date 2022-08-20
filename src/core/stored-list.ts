@@ -20,11 +20,13 @@ export class StoredList<T> implements IList<T> {
   private initialized: boolean;
   private saveTimeoutId: number | null;
   private timeoutTime: number;
+  private deleted: boolean;
 
   public onAdded: XEventTarget<IStorageUpdated<T>>;
   public onRemoved: XEventTarget<IStorageUpdated<T>>;
   public onUpdated: XEventTarget<IStorageUpdated<T>>;
   public onCleared: XEventTarget<IStorageUpdated<T>>;
+  public onDeleted: XEventTarget<void>;
   //#endregion
 
   //#region Init
@@ -34,6 +36,7 @@ export class StoredList<T> implements IList<T> {
     this.initialized = false;
     this.saveTimeoutId = null;
     this.timeoutTime = 5000;
+    this.deleted = false;
 
     this.items = [];
 
@@ -41,9 +44,14 @@ export class StoredList<T> implements IList<T> {
     this.onRemoved = new XEventTarget<IStorageUpdated<T>>();
     this.onUpdated = new XEventTarget<IStorageUpdated<T>>();
     this.onCleared = new XEventTarget<IStorageUpdated<T>>();
+    this.onDeleted = new XEventTarget();
   }
 
   public async init(): Promise<void> {
+    if (this.deleted) {
+      throw new TypeError("Stored list " + this.name + " is deleted.");
+    }
+
     if (this.initialized) {
       return;
     }
@@ -59,6 +67,10 @@ export class StoredList<T> implements IList<T> {
   }
 
   private async validateStorage(): Promise<boolean> {
+    if (this.deleted) {
+      throw new TypeError("Stored list " + this.name + " is deleted.");
+    }
+    
     const { name, storage } = this;
 
     const response = await storage.get(name);
@@ -67,11 +79,19 @@ export class StoredList<T> implements IList<T> {
   }
 
   private async recreate(): Promise<void> {
+    if (this.deleted) {
+      throw new TypeError("Stored list " + this.name + " is deleted.");
+    }
+    
     const { name, storage } = this;
     await storage.set({ [name]: [] });
   }
 
   private async loadItems(): Promise<T[]> {
+    if (this.deleted) {
+      throw new TypeError("Stored list " + this.name + " is deleted.");
+    }
+    
     const { name, initialized, storage } = this;
 
     const response = await storage.get(name);
@@ -85,6 +105,10 @@ export class StoredList<T> implements IList<T> {
   }
 
   private async save(): Promise<void> {
+    if (this.deleted) {
+      throw new TypeError("Stored list " + this.name + " is deleted.");
+    }
+    
     if (this.saveTimeoutId) {
       clearTimeout(this.saveTimeoutId);
       this.saveTimeoutId = null;
@@ -102,6 +126,10 @@ export class StoredList<T> implements IList<T> {
   //#endregion
 
   public append(item: T): boolean {
+    if (this.deleted) {
+      throw new TypeError("Stored list " + this.name + " is deleted.");
+    }
+    
     if (this.items.includes(item)) {
       return false;
     }
@@ -112,6 +140,10 @@ export class StoredList<T> implements IList<T> {
   }
 
   public remove(item: T): boolean {
+    if (this.deleted) {
+      throw new TypeError("Stored list " + this.name + " is deleted.");
+    }
+    
     const index = this.items.indexOf(item);
     if (index === -1) return false;
     this.items.splice(index, 1);
@@ -121,6 +153,10 @@ export class StoredList<T> implements IList<T> {
   }
 
   public removeByPredicate(predicate: (value: T) => boolean): number {
+    if (this.deleted) {
+      throw new TypeError("Stored list " + this.name + " is deleted.");
+    }
+    
     let index: number;
     let count = 0;
     while ((index = this.items.findIndex((item) => predicate(item))) > -1) {
@@ -134,6 +170,10 @@ export class StoredList<T> implements IList<T> {
   }
 
   public removeSingleByPredicate(predicate: (value: T) => boolean): boolean {
+    if (this.deleted) {
+      throw new TypeError("Stored list " + this.name + " is deleted.");
+    }
+    
     const index = this.items.findIndex((item) => predicate(item));
     if (index === -1) return false;
     const lock = this.items[index];
@@ -144,6 +184,10 @@ export class StoredList<T> implements IList<T> {
   }
 
   public clear(): void {
+    if (this.deleted) {
+      throw new TypeError("Stored list " + this.name + " is deleted.");
+    }
+    
     const lock = [...this.items];
     this.items.length = 0;
     this.save();
@@ -151,14 +195,26 @@ export class StoredList<T> implements IList<T> {
   }
 
   public includes(item: T): boolean {
+    if (this.deleted) {
+      throw new TypeError("Stored list " + this.name + " is deleted.");
+    }
+    
     return this.items.includes(item);
   }
 
   public includesByPredicate(predicate: (value: T) => boolean): boolean {
+    if (this.deleted) {
+      throw new TypeError("Stored list " + this.name + " is deleted.");
+    }
+    
     return this.items.findIndex((item) => predicate(item)) > -1;
   }
 
   public findByPredicate(predicate: (value: T) => boolean): T | null {
+    if (this.deleted) {
+      throw new TypeError("Stored list " + this.name + " is deleted.");
+    }
+    
     const result = this.items.find((item) => predicate(item));
 
     if (result) {
@@ -169,6 +225,10 @@ export class StoredList<T> implements IList<T> {
   }
 
   public update(predicate: (value: T) => boolean, update: (value: Readonly<T>) => T) {
+    if (this.deleted) {
+      throw new TypeError("Stored list " + this.name + " is deleted.");
+    }
+    
     const { items } = this;
     let index = 0;
 
@@ -186,8 +246,22 @@ export class StoredList<T> implements IList<T> {
   }
 
   public *[Symbol.iterator](): Iterator<T> {
+    if (this.deleted) {
+      throw new TypeError("Stored list " + this.name + " is deleted.");
+    }
+    
     for (const item of this.items) {
       yield item;
     }
+  }
+
+  public delete() {
+    if (this.deleted) {
+      throw new TypeError("Stored list " + this.name + " is already deleted.");
+    }
+    
+    this.deleted = true;
+    this.storage.remove(this.name);
+    this.onDeleted.dispatch();
   }
 }

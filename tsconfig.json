@@ -12,7 +12,8 @@
     "noUnusedLocals": true,
     "sourceMap": true,
     "strict": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "experimentalDecorators": true
   },
   "typeAcquisition": {
     "enable": true
