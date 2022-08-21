@@ -1,6 +1,6 @@
 {
   "name": "webextension-library",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "The lib for TSRAuto",
   "main": "lib/index.cjs.js",
   "types": "types/index.d.ts",
@@ -17,8 +17,7 @@
     "build:pro": "rollup -c --environment NODE_ENV:production",
     "build:types": "tsc -p tsconfig.d.json",
     "build:watch": "pnpm run build:dev -- -w",
-    "prepublishOnly": "pnpm run build",
-    "postpublish": "if exist node_modules rmdir /S /Q node_modules && if exist package-lock.json rmdir /S /Q package-lock.json && pnpm i"
+    "prepublishOnly": "pnpm run build"
   },
   "keywords": [],
   "author": "aflyyyka",
