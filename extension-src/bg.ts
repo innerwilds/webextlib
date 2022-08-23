@@ -1,15 +1,17 @@
-import { Browser } from "webextension-polyfill";
-import {StoredList} from "../src/core/stored-list";
-import { Entity } from "./entity";
+import {Browser} from 'webextension-polyfill';
+import StoredList from '../src/core/stored-list';
+import {Entity} from './entity';
 
-declare var browser: Browser;
+declare let browser: Browser;
 
 async function setup() {
-    const list = await StoredList.create<Entity>("Ababa", browser.storage.local);
+	const list = await StoredList.create<Entity>('Ababa', browser.storage.local);
 
-    list.onUpdate.addListener(i => console.log("BG: ", i));
+	list.onUpdate.addListener(i => {
+		console.log('BG: ', i);
+	});
 
-    list.append(new Entity(0, "Jake"));
+	await list.append(new Entity(0, 'Jake'));
 }
 
-setup();
+setup().then(console.log).catch(console.error);

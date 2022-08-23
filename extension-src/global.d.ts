@@ -1,5 +1,5 @@
-import { Browser } from "webextension-polyfill";
+import {Browser} from 'webextension-polyfill';
 
 declare global {
-    var browser: Browser;
+	let browser: Browser;
 }
