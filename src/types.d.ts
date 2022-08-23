@@ -1,35 +1,52 @@
-import { Browser, Runtime } from "webextension-polyfill";
-import { Status } from "./const";
+/* eslint-disable @typescript-eslint/naming-convention */
 
-declare var browser: Browser;
+import {Browser, Runtime} from 'webextension-polyfill';
+import {Status, UpdateType} from './const';
 
-export interface IMessage<T, R> {
-  sendResponse(data: R): void;
-  sendStatus(status: Status, error?: Error): void;
-  data: T;
-  sender: Runtime.MessageSender;
-}
+declare let browser: Browser;
 
-export interface IResponse<T> {
-  data?: T;
-  error?: Error;
-  status: Status;
-}
+export type ICoreStorageData<T> = {
+	items: T[];
+	updateType: UpdateType;
+	updateCounter: number;
+	updateIds: number[];
+};
 
-export interface ICoreMessage<T> {
-  key: string;
-  data: T;
-}
+export type ICoreStorageDataUpdateInfo<T> = {
+	updateType: UpdateType;
+	updateIds: number[];
+	item?: T;
+};
 
-export interface ICreateMessage {
-  <T, R>(key: string): [ISendMessage<T, R>, IMessageStream<T, R>];
-}
+export type IStoredListUpdateInfo<T> = {
+	type: UpdateType;
+	ids: number[];
+	external: boolean;
+};
 
-export interface ISendMessage<T, R> {
-  (data: T, tabId?: number): Promise<IResponse<R>>;
-}
+export type IMessage<T, R> = {
+	data: T;
+	sender: Runtime.MessageSender;
+	sendResponse(data: R): void;
+	sendStatus(status: Status, error?: Error): void;
+};
 
-export interface IMessageStream<T, R> {
-  subscribe(fn: (message: IMessage<T, R>) => void): void;
-  unsubscribe(fn: (message: IMessage<T, R>) => void): void;
-}
+export type IResponse<T> = {
+	data?: T;
+	error?: Error;
+	status: Status;
+};
+
+export type ICoreMessage<T> = {
+	key: string;
+	data: T;
+};
+
+export type ICreateMessage = <T, R>(key: string) => [ISendMessage<T, R>, IMessageStream<T, R>];
+
+export type ISendMessage<T, R> = (data: T, tabId?: number) => Promise<IResponse<R>>;
+
+export type IMessageStream<T, R> = {
+	subscribe(fn: (message: IMessage<T, R>) => void): void;
+	unsubscribe(fn: (message: IMessage<T, R>) => void): void;
+};

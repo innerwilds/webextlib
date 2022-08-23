@@ -1,36 +1,38 @@
 enum EnvironmentType {
-  Tab,
-  Popup,
-  Background,
+	Tab,
+	Popup,
+	Background,
 }
 
 function detectEnvironmentType() {
-  const isHTTP = !!location.protocol.match(/^https?\:$/i);
+	const isHttp = Boolean(/^https?:$/i.exec(location.protocol));
 
-  if (isHTTP) return EnvironmentType.Tab;
+	if (isHttp) {
+		return EnvironmentType.Tab;
+	}
 
-  const isMozExtension = !!location.protocol.match(/^moz-extension\:$/i);
+	const isMozExtension = Boolean(/^moz-extension:$/i.exec(location.protocol));
 
-  if (!isMozExtension) {
-    throw new TypeError('Environment type is not recognized. Is not extension page');
-  }
+	if (!isMozExtension) {
+		throw new TypeError('Environment type is not recognized. Is not extension page');
+	}
 
-  const isBackground = location.pathname.includes('background');
+	const isBackground = location.pathname.includes('background');
 
-  if (isBackground) {
-    return EnvironmentType.Background;
-  }
+	if (isBackground) {
+		return EnvironmentType.Background;
+	}
 
-  const isPopup = location.pathname.includes('popup');
+	const isPopup = location.pathname.includes('popup');
 
-  if (isPopup) {
-    return EnvironmentType.Popup;
-  }
+	if (isPopup) {
+		return EnvironmentType.Popup;
+	}
 
-  throw new TypeError('Environment type is not recognized. Is extension page, but pathname is not valid');
+	throw new TypeError('Environment type is not recognized. Is extension page, but pathname is not valid');
 }
 
-export default class Environment {
-  public static readonly type: EnvironmentType = detectEnvironmentType();
-  public static readonly Types: typeof EnvironmentType = EnvironmentType;
-}
+export default {
+	environmentType: detectEnvironmentType(),
+	environmentTypes: EnvironmentType,
+};
