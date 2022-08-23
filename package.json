@@ -1,6 +1,6 @@
 {
   "name": "webextension-library",
-  "version": "1.0.3",
+  "version": "2.0.0",
   "description": "The lib for TSRAuto",
   "main": "lib/index.cjs.js",
   "types": "types/index.d.ts",
@@ -17,7 +17,8 @@
     "build:pro": "rollup -c --environment NODE_ENV:production",
     "build:types": "tsc -p tsconfig.d.json",
     "build:watch": "pnpm run build:dev -- -w",
-    "prepublishOnly": "pnpm run build"
+    "prepublishOnly": "pnpm run build",
+    "start:firefox": "web-ext run --source-dir ./extension/ --verbose"
   },
   "keywords": [],
   "author": "aflyyyka",
@@ -30,10 +31,12 @@
     "rollup": "^2.78.0",
     "tslib": "^2.4.0",
     "typescript": "^4.7.4",
+    "web-ext": "^7.2.0",
     "webextension-polyfill": "^0.10.0"
   },
   "dependencies": {
     "@rollup/plugin-node-resolve": "^13.3.0",
-    "deflib": "^1.0.0"
+    "deflib": "^1.0.3",
+    "reflect-metadata": "^0.1.13"
   }
 }

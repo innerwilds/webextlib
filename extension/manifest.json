@@ -1,0 +1,44 @@
+{
+    "browser_specific_settings": {
+      "gecko": {
+        "id": "addon@example.com",
+        "strict_min_version": "53.0"
+      }
+    },
+  
+    "background": {
+      "scripts": [
+        "browser-polyfill.min.js",
+        "dist/bg.js"
+      ]
+    },
+
+    "browser_action": {
+      "default_icon": {
+        "16": "dist/popup/icon.png",
+        "32": "dist/popup/icon.png"
+      },
+      "default_title": "Whereami?",
+      "default_popup": "popup.html",
+      "theme_icons": [{
+        "light": "dist/popup/icon.png",
+        "dark": "dist/popup/icon.png",
+        "size": 16
+      }, {
+        "light": "dist/popup/icon.png",
+        "dark": "dist/popup/icon.png",
+        "size": 32
+      }]
+    },
+  
+  
+    "description": "TSR Automatic Download",
+  
+    "manifest_version": 2,
+  
+    "name": "Webextension-Library",
+  
+    "permissions": ["*<all_urls>", "unlimitedStorage", "downloads", "tabs", "storage"],
+  
+    "version": "0.1"
+  }

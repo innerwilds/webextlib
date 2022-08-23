@@ -21,5 +21,25 @@ export default [
             sourcemap: true,
         },
         plugins: [typescript()]
+    },
+    {
+        input: "extension-src/popup.ts",
+        output: {
+            name: "ExtensionPopup",
+            format: "iife",
+            file: "extension/dist/popup.js",
+            sourcemap: true,
+        },
+        plugins: [typescript(), nodeResolve()]
+    },
+    {
+        input: "extension-src/bg.ts",
+        output: {
+            name: "ExtensionBG",
+            format: "iife",
+            file: "extension/dist/bg.js",
+            sourcemap: true,
+        },
+        plugins: [typescript(), nodeResolve()]
     }
 ]

@@ -4,6 +4,10 @@ import { Status } from '../const';
 
 const keys = new Set();
 
+export const deleteMessage = function(key: string) {
+  keys.delete(key);
+}
+
 const createMessage: ICreateMessage = function <T, R>(key: string) {
   if (keys.has(key)) {
     throw new TypeError('Key ' + key + ' is not already unique');
@@ -17,6 +21,10 @@ const createMessageStream = <T, R>(key: string): IMessageStream<T, R> => {
   browser.runtime.onMessage.addListener(handleMessage);
 
   function handleMessage(coreMessage: ICoreMessage<T>, sender: Runtime.MessageSender) {
+    if (!keys.has(key)) {
+      del();
+    }
+
     if (coreMessage.key !== key) {
       return;
     }
@@ -60,14 +68,25 @@ const createMessageStream = <T, R>(key: string): IMessageStream<T, R> => {
     });
   }
 
+  function del() {
+    browser.runtime.onMessage.removeListener(handleMessage);
+    fns.length = 0;
+  }
+
   return {
     subscribe(fn) {
+      if (!keys.has(key)) {
+        del();
+      }
       if (fns.includes(fn)) {
         return;
       }
       fns.push(fn);
     },
     unsubscribe(fn) {
+      if (!keys.has(key)) {
+        del();
+      }
       const index = fns.indexOf(fn);
       if (index > -1) {
         return;
@@ -79,6 +98,10 @@ const createMessageStream = <T, R>(key: string): IMessageStream<T, R> => {
 
 const createSendMessage = <T, R>(key: string): ISendMessage<T, R> => {
   async function sendMessage(data: T, tabId?: number): Promise<IResponse<R>> {
+    if (!keys.has(key)) {
+      throw new TypeError("Message has been deleted.");
+    }
+
     const coreMessage: ICoreMessage<T> = {
       key,
       data,

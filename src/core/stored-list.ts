@@ -1,266 +1,363 @@
-import { isArray, XEventTarget, IList } from 'deflib';
-import { Storage } from 'webextension-polyfill';
+import { XEventTarget } from "deflib";
+import { hasProperty } from "deflib";
+import { isArray } from "deflib";
+import type { Storage } from "webextension-polyfill";
 
-export interface IStoredListChangeInfo<T> {
-  name: string;
-  added?: T;
-  removed?: T;
-  cleared?: T[];
-  updated?: {
-    old: T;
-    new: T;
-  };
+interface ICoreStorageData<T> {
+    items: T[];
+    updateType: UpdateType;
+    updateCounter: number;
+    updateIds: number[];
 }
 
-export class StoredList<T> implements IList<T> {
-  //#region Fields
-  public readonly name: string;
+interface ICoreStorageDataUpdateInfo<T> {
+    updateType: UpdateType;
+    updateIds: number[];
+    item?: T;
+}
 
-  private storage: Storage.StorageArea;
-  private items: T[];
-  private initialized: boolean;
-  private saveTimeoutId: number | null;
-  private timeoutTime: number;
-  private deleted: boolean;
+export enum UpdateType {
+    ListDeleted,
+    ItemAdded,
+    ItemDeleted,
+    ListCleared,
+    ItemUpdated,
+    None
+}
 
-  public onAdded: XEventTarget<IStoredListChangeInfo<T>>;
-  public onRemoved: XEventTarget<IStoredListChangeInfo<T>>;
-  public onUpdated: XEventTarget<IStoredListChangeInfo<T>>;
-  public onCleared: XEventTarget<IStoredListChangeInfo<T>>;
-  public onDeleted: XEventTarget<IStoredListChangeInfo<T>>;
-  //#endregion
+export interface IStoredListUpdateInfo<T> {
+    type: UpdateType;
+    ids: number[];
+    external: boolean;
+}
 
-  //#region Init
-  constructor(name: string, storage: Storage.LocalStorageArea) {
-    this.name = name;
-    this.storage = storage;
-    this.initialized = false;
-    this.saveTimeoutId = null;
-    this.timeoutTime = 5000;
-    this.deleted = false;
-
-    this.items = [];
-
-    this.onAdded = new XEventTarget<IStoredListChangeInfo<T>>();
-    this.onRemoved = new XEventTarget<IStoredListChangeInfo<T>>();
-    this.onUpdated = new XEventTarget<IStoredListChangeInfo<T>>();
-    this.onCleared = new XEventTarget<IStoredListChangeInfo<T>>();
-    this.onDeleted = new XEventTarget<IStoredListChangeInfo<T>>();
-  }
-
-  public async init(): Promise<void> {
-    if (this.deleted) {
-      throw new TypeError("Stored list " + this.name + " is deleted.");
+function validateCoreStorageData(data: ICoreStorageData<any>): boolean {
+    if (!data || typeof data !== "object") {
+        return false;
     }
 
-    if (this.initialized) {
-      return;
+    const props = Object.getOwnPropertyDescriptors(data);
+    const keys = Object.keys(props);
+
+    const checkEvery = (key: string) => {
+        if (key === "items") {
+            return isArray(data[key]);
+        }
+        else if (key === "updateIds") {
+            return isArray(data[key]);
+        }
+        else if (key === "updateCounter") {
+            return isFinite(data[key]) && data[key] !== null;
+        }
+        else if (key === "updateType") {
+            return Object.values(UpdateType).includes(data[key]);
+        }
+
+        return false;
     }
 
-    const valid = await this.validateStorage();
+    return keys.every(checkEvery);
+}
 
-    if (!valid) {
-      await this.recreate();
+export class StoredList<T extends { id: number }> {
+
+    public readonly name: string;
+    public onUpdate: XEventTarget<IStoredListUpdateInfo<T>>;
+
+    private storage: Storage.StorageArea;
+    private items: T[];
+    private updateCounter: number;
+    private deleted: boolean;
+
+    private constructor(name: string, storage: Storage.StorageArea) {
+        this.name = name;
+        this.storage = storage;
+        this.deleted = false;
+        this.items = [];
+        this.updateCounter = 0;
+        this.onUpdate = new XEventTarget<IStoredListUpdateInfo<T>>();
     }
 
-    this.items = await this.loadItems();
-    this.initialized = true;
-  }
+    public static async create<T extends { id: number }>(name: string, storage: Storage.StorageArea): Promise<StoredList<T>> {
+        const list = new StoredList<T>(name, storage);
 
-  private async validateStorage(): Promise<boolean> {
-    if (this.deleted) {
-      throw new TypeError("Stored list " + this.name + " is deleted.");
+        if (!(await list.validateStorage())) {
+            await list.recreateStorage();
+        }
+        else {
+            await list.loadStorageData();
+        }
+
+        list.storage.onChanged.addListener(list.handleChanges);
+
+        return list;
+    }
+
+    private handleChanges = (changes: Storage.StorageAreaOnChangedChangesType): void => {
+        const changeInfo: Storage.StorageAreaOnChangedChangesType = changes[this.name] as Storage.StorageAreaOnChangedChangesType;
+
+        if (!changeInfo || !changeInfo.newValue) {
+            console.warn("Handle undefined changes ", changes);
+            return;
+        }
+
+        const info: ICoreStorageData<T> = changeInfo.newValue;
+
+        if (info.updateType === UpdateType.None) {
+            console.warn("Some other StoredList has been recreate the storage, when this StoredList is exists.");
+            this.delete(true);
+            return;
+        }
+
+        if (info.updateType === UpdateType.ListDeleted) {
+            this.delete(true);
+            return;
+        }
+
+        if (info.updateCounter === this.updateCounter) {
+            return;
+        }
+
+        this.localUpdate(info);
+
+        this.onUpdate.dispatch({ ids: info.updateIds, type: info.updateType, external: true })
+    }
+
+    private localUpdate(info: ICoreStorageData<T>) {
+        const {updateType, updateIds, items} = info;
+
+        if (updateType === UpdateType.ListCleared) {
+            this.items.length = 0;
+        }
+        else if (updateType === UpdateType.ItemAdded) {
+            for (const id of updateIds)
+                if (!this.items.some(i => i.id === id)) {
+                    const found = items.find(i => i.id === id);
+
+                    if (found) {
+                        this.items.push(found);
+                    }
+                }
+        }
+        else if (updateType === UpdateType.ItemDeleted) {
+            for (const id of updateIds)
+            {
+                const index = this.items.findIndex(i => i.id === id);
+                this.items.splice(index, 1);
+            }
+        }
+        else if (updateType === UpdateType.ItemUpdated) {
+            for (const item of items) {
+                const index = this.items.findIndex(i => i.id === item.id);
+                this.items[index] = item;
+            }
+        }
+
+        this.updateCounter = info.updateCounter;
+    }
+
+    private async recreateStorage() {
+        if (this.deleted) {
+            throw new TypeError("List has been deleted.");
+        }
+
+        const data: ICoreStorageData<T> = {
+            items: [],
+            updateType: UpdateType.None,
+            updateCounter: 0,
+            updateIds: [],
+        };
+
+        await this.storage.set({ [this.name]: data });
+
+        this.items = [];
+        this.updateCounter = 0;
+    }
+
+    private async validateStorage(): Promise<boolean> {
+        if (this.deleted) {
+            throw new TypeError("List has been deleted.");
+        }
+
+        const {storage, name} = this;
+
+        const response = await storage.get(name);
+
+        if (!hasProperty(response, name)) {
+            return false;
+        }
+
+        const storageData = response[name];
+
+        return validateCoreStorageData(storageData);
+    }
+
+    private async loadStorageData(): Promise<void> {
+        if (this.deleted) {
+            throw new TypeError("List has been deleted.");
+        }
+
+        const response = await this.storage.get(this.name);
+        const data: ICoreStorageData<T> = response[this.name];
+
+        this.updateCounter = data.updateCounter;
+        this.items = data.items;
+    }
+
+    private async save(info: ICoreStorageDataUpdateInfo<T>) {
+        if (this.deleted) {
+            throw new TypeError("List has been deleted.");
+        }
+
+        const saveInfo: ICoreStorageData<T> = {
+            items: this.items,
+            updateCounter: ++this.updateCounter,
+            updateIds: info.updateIds,
+            updateType: info.updateType
+        };
+
+        this.onUpdate.dispatch({ ids: info.updateIds, type: info.updateType, external: false });
+
+        await this.storage.set({ [this.name]: saveInfo });
+    }
+
+    public async append(...values: T[]): Promise<number> {
+        if (this.deleted) {
+            throw new TypeError("List has been deleted.");
+        }
+
+        const newIds = [];
+
+        for (const value of values) {
+            if (this.items.some(item => item.id === value.id)) {
+                continue;
+            }
+            this.items.push(value);
+            newIds.push(value.id);
+        }
+
+        if (newIds.length === 0) {
+            return 0;
+        }
+
+        await this.save({ updateIds: newIds, updateType: UpdateType.ItemAdded });
+
+        return newIds.length;
+    }
+
+    public async remove(...values: T[] | number[]): Promise<number> {
+        if (this.deleted) {
+            throw new TypeError("List has been deleted.");
+        }
+
+        const removedIds: number[] = [];
+
+        if (typeof values[0] !== "number") {
+            for (const value of values as T[]) {
+                const index = this.items.findIndex(item => item.id === value.id);
+                this.items.splice(index, 1);
+                removedIds.push(value.id);
+            }
+        }
+        else {
+            for (const id of values as number[]) {
+                const index = this.items.findIndex(item => item.id === id);
+                this.items.splice(index, 1);
+                removedIds.push(id);
+            }
+        }
+
+        if (removedIds.length === 0) {
+            return 0;
+        }
+
+        await this.save({ updateIds: removedIds, updateType: UpdateType.ItemDeleted });
+
+        return removedIds.length;
     }
     
-    const { name, storage } = this;
+    public async update(...newValues: T[]): Promise<number> {
+        if (this.deleted) {
+            throw new TypeError("List has been deleted.");
+        }
 
-    const response = await storage.get(name);
+        const updatedIds: number[] = [];
 
-    return isArray(response[name]);
-  }
+        for (const value of newValues) {
+            const index = this.items.findIndex(item => item.id === value.id);
+            if (index === -1) {
+                continue;
+            }
+            this.items[index] = value;
+        }
 
-  private async recreate(): Promise<void> {
-    if (this.deleted) {
-      throw new TypeError("Stored list " + this.name + " is deleted.");
-    }
-    
-    const { name, storage } = this;
-    await storage.set({ [name]: [] });
-  }
+        if (updatedIds.length === 0) {
+            return 0;
+        }
 
-  private async loadItems(): Promise<T[]> {
-    if (this.deleted) {
-      throw new TypeError("Stored list " + this.name + " is deleted.");
-    }
-    
-    const { name, initialized, storage } = this;
+        await this.save({ updateIds: updatedIds, updateType: UpdateType.ItemUpdated });
 
-    const response = await storage.get(name);
-
-    if (!isArray(response[name])) {
-      if (!initialized) throw new TypeError('Call init before using StoredCollection');
-      this.recreate();
+        return updatedIds.length;
     }
 
-    return response[name];
-  }
+    public find(predicate: (value: T) => boolean): T | null {
+        if (this.deleted) {
+            throw new TypeError("List has been deleted.");
+        }
 
-  private async save(): Promise<void> {
-    if (this.deleted) {
-      throw new TypeError("Stored list " + this.name + " is deleted.");
-    }
-    
-    if (this.saveTimeoutId) {
-      clearTimeout(this.saveTimeoutId);
-      this.saveTimeoutId = null;
-      this.timeoutTime -= 250; // Чем больше несохранено, тем выше риски потерять данные.
-    }
+        const found = this.items.find(item => predicate(item));
+        
+        if (found)
+            return found;
 
-    const { name, storage, items } = this;
-
-    this.saveTimeoutId = setTimeout(() => {
-      storage.set({ [name]: items });
-      this.timeoutTime = 5000;
-    }, this.timeoutTime);
-  }
-
-  //#endregion
-
-  public append(item: T): boolean {
-    if (this.deleted) {
-      throw new TypeError("Stored list " + this.name + " is deleted.");
-    }
-    
-    if (this.items.includes(item)) {
-      return false;
-    }
-    this.items.push(item);
-    this.save();
-    this.onAdded.dispatch({ name: this.name, added: item });
-    return true;
-  }
-
-  public remove(item: T): boolean {
-    if (this.deleted) {
-      throw new TypeError("Stored list " + this.name + " is deleted.");
-    }
-    
-    const index = this.items.indexOf(item);
-    if (index === -1) return false;
-    this.items.splice(index, 1);
-    this.save();
-    this.onRemoved.dispatch({ name: this.name, removed: item });
-    return true;
-  }
-
-  public removeByPredicate(predicate: (value: T) => boolean): number {
-    if (this.deleted) {
-      throw new TypeError("Stored list " + this.name + " is deleted.");
-    }
-    
-    const {items} = this;
-
-    let index: number;
-    let count = 0;
-
-    while ((index = items.findIndex((item) => predicate(item))) > -1) {
-      this.remove(items[index]);
-      count++;
-    }
-    this.save();
-    return count;
-  }
-
-  public removeSingleByPredicate(predicate: (value: T) => boolean): boolean {
-    if (this.deleted) {
-      throw new TypeError("Stored list " + this.name + " is deleted.");
-    }
-    
-    const index = this.items.findIndex((item) => predicate(item));
-    if (index === -1) return false;
-    this.remove(this.items[index]);
-    return true;
-  }
-
-  public clear(): void {
-    if (this.deleted) {
-      throw new TypeError("Stored list " + this.name + " is deleted.");
-    }
-    
-    const lock = [...this.items];
-    this.items.length = 0;
-    this.save();
-    this.onCleared.dispatch({ name: this.name, cleared: lock });
-  }
-
-  public includes(item: T): boolean {
-    if (this.deleted) {
-      throw new TypeError("Stored list " + this.name + " is deleted.");
-    }
-    
-    return this.items.includes(item);
-  }
-
-  public includesByPredicate(predicate: (value: T) => boolean): boolean {
-    if (this.deleted) {
-      throw new TypeError("Stored list " + this.name + " is deleted.");
-    }
-    
-    return this.items.findIndex((item) => predicate(item)) > -1;
-  }
-
-  public findByPredicate(predicate: (value: T) => boolean): T | null {
-    if (this.deleted) {
-      throw new TypeError("Stored list " + this.name + " is deleted.");
-    }
-    
-    const result = this.items.find((item) => predicate(item));
-
-    if (result) {
-      return result;
+        return null;
     }
 
-    return null;
-  }
+    public findById(id: number): T | null {
+        if (this.deleted) {
+            throw new TypeError("List has been deleted.");
+        }
 
-  public update(predicate: (value: T) => boolean, update: (value: Readonly<T>) => T) {
-    if (this.deleted) {
-      throw new TypeError("Stored list " + this.name + " is deleted.");
-    }
-    
-    const { items } = this;
-    let index = 0;
+        const found = this.items.find(item => item.id === id);
 
-    for (const item of items) {
-      const toUpdate = predicate(item);
-      if (toUpdate) {
-        const previous = items[index];
-        const newItem = (items[index] = update(Object.freeze(item)));
-        this.onUpdated.dispatch({ name: this.name, updated: { new: newItem, old: previous } });
-      }
-      index++;
+        return found ? found : null;
     }
 
-    this.save();
-  }
+    public async clear(): Promise<boolean> {
+        if (this.deleted) {
+            throw new TypeError("List has been deleted.");
+        }
 
-  public *[Symbol.iterator](): Iterator<T> {
-    if (this.deleted) {
-      throw new TypeError("Stored list " + this.name + " is deleted.");
-    }
-    
-    for (const item of this.items) {
-      yield item;
-    }
-  }
+        if (this.items.length === 0) {
+            return false;
+        }
 
-  public delete() {
-    if (this.deleted) {
-      throw new TypeError("Stored list " + this.name + " is already deleted.");
+        const removedIds = this.items.map(item => item.id);
+
+        this.items.length = 0;
+
+        await this.save({
+            updateIds: removedIds,
+            updateType: UpdateType.ListCleared
+        });
+
+        return true;
     }
-    
-    this.deleted = true;
-    this.storage.remove(this.name);
-    this.onDeleted.dispatch({ name: this.name });
-  }
+
+    public async delete(deletedByOther=false): Promise<boolean> {
+        if (this.deleted) {
+            return false;
+        }
+
+        this.deleted = true;
+        this.items.length = 0;
+
+        this.storage.onChanged.removeListener(this.handleChanges);
+
+        if (!deletedByOther) {
+            await this.storage.set({ [this.name]: { updateType: UpdateType.ItemDeleted } });
+        }
+
+        return true;
+    }
 }
