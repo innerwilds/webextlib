@@ -41,7 +41,9 @@
   },
   "dependencies": {
     "@rollup/plugin-node-resolve": "^13.3.0",
-    "deflib": "^1.0.3",
+    "@types/events": "^3.0.0",
+    "events": "github:innerwilds/ts-events",
+    "lodash": "^4.17.21",
     "reflect-metadata": "^0.1.13"
   }
 }

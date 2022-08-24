@@ -19,8 +19,8 @@ export type ICoreStorageDataUpdateInfo<T> = {
 };
 
 export type IStoredListUpdateInfo<T> = {
-	type: UpdateType;
 	ids: number[];
+	type: UpdateType;
 	external: boolean;
 };
 

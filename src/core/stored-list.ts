@@ -1,6 +1,5 @@
-import {XEventTarget} from 'deflib';
-import {hasProperty} from 'deflib';
-import {isArray} from 'deflib';
+import {EventEmitter} from 'events';
+import {has} from 'lodash';
 import type {Storage} from 'webextension-polyfill';
 import {UpdateType} from '../const';
 import type {ICoreStorageData, ICoreStorageDataUpdateInfo, IStoredListUpdateInfo} from '../types';
@@ -15,11 +14,11 @@ function validateCoreStorageData(data: any): boolean {
 
 	const checkEvery = (key: string) => {
 		if (key === 'items') {
-			return isArray(data[key]);
+			return Array.isArray(data[key]);
 		}
 
 		if (key === 'updateIds') {
-			return isArray(data[key]);
+			return Array.isArray(data[key]);
 		}
 
 		if (key === 'updateCounter') {
@@ -53,7 +52,7 @@ export default class StoredList<T extends {id: number}> {
 		return list;
 	}
 
-	public onUpdate: XEventTarget<IStoredListUpdateInfo<T>>;
+	public onUpdate: EventEmitter<IStoredListUpdateInfo<T>, UpdateType>;
 	private items: T[];
 	private updateCounter: number;
 	private deleted: boolean;
@@ -64,7 +63,7 @@ export default class StoredList<T extends {id: number}> {
 		this.deleted = false;
 		this.items = [];
 		this.updateCounter = 0;
-		this.onUpdate = new XEventTarget<IStoredListUpdateInfo<T>>();
+		this.onUpdate = new EventEmitter();
 	}
 
 	public async append(...values: T[]): Promise<number> {
@@ -233,7 +232,7 @@ export default class StoredList<T extends {id: number}> {
 
 		this.localUpdate(info);
 
-		this.onUpdate.dispatch({ids: info.updateIds, type: info.updateType, external: true});
+		this.onUpdate.emit(info.updateType, {ids: info.updateIds, type: info.updateType, external: true});
 	};
 
 	private localUpdate(info: ICoreStorageData<T>) {
@@ -293,7 +292,8 @@ export default class StoredList<T extends {id: number}> {
 
 		const response = await storage.get(name);
 
-		if (!hasProperty(response, name)) {
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+		if (!has(response, name)) {
 			return false;
 		}
 
@@ -327,7 +327,7 @@ export default class StoredList<T extends {id: number}> {
 			updateType: info.updateType,
 		};
 
-		this.onUpdate.dispatch({ids: info.updateIds, type: info.updateType, external: false});
+		this.onUpdate.emit(info.updateType, {ids: info.updateIds, type: info.updateType, external: false});
 
 		await this.storage.set({[this.name]: saveInfo});
 	}

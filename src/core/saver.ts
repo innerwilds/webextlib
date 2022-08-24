@@ -1,12 +1,12 @@
-import {XEventTarget} from 'deflib';
+import {EventEmitter} from 'events';
 import type {Storage} from 'webextension-polyfill';
 
 export default class Saver {
-	private readonly onChanged: XEventTarget<Record<string, Storage.StorageAreaOnChangedChangesType>>;
+	private readonly onChanged: EventEmitter<Record<string, Storage.StorageAreaSyncOnChangedChangesType>>;
 
 	constructor(private readonly storage: Storage.StorageArea) {
 		this.storage = storage;
-		this.onChanged = new XEventTarget();
+		this.onChanged = new EventEmitter();
 		this.storage.onChanged.addListener(this.handleChanges);
 	}
 
@@ -20,6 +20,6 @@ export default class Saver {
 	}
 
 	private handleChanges(changes: any) {
-		this.onChanged.dispatch(changes);
+		this.onChanged.emit(changes);
 	}
 }
