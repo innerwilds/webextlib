@@ -1,4 +1,5 @@
 import { EventEmitter } from "eventemitter3";
+import { has } from "underscore";
 import { isArray } from "underscore";
 import type { Storage } from "webextension-polyfill";
 
@@ -92,6 +93,17 @@ export async function loadEntity<T extends { id: number }>(target: string, id: n
 	}
 
 	return undefined;
+}
+
+export async function hasTarget(target: string) {
+	const key = '$$$' + target;
+	return isArray((await storage.get(key))[key]);
+}
+
+export async function hasEntity(target: string, entityId: number) {
+	const key = createEntityKey(target, entityId);
+	const response = await storage.get(key);
+	return has(response, key);
 }
 
 export async function deleteTarget(target: string) {
