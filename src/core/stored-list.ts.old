@@ -1,39 +1,9 @@
-import {EventEmitter} from 'events';
-import {has} from 'lodash';
+import EventEmitter from 'eventemitter3';
+import {has} from 'underscore';
 import type {Storage} from 'webextension-polyfill';
 import {UpdateType} from '../const';
 import type {ICoreStorageData, ICoreStorageDataUpdateInfo, IStoredListUpdateInfo} from '../types';
-
-function validateCoreStorageData(data: any): boolean {
-	if (!data || typeof data !== 'object') {
-		return false;
-	}
-
-	const props = Object.getOwnPropertyDescriptors(data);
-	const keys = Object.keys(props);
-
-	const checkEvery = (key: string) => {
-		if (key === 'items') {
-			return Array.isArray(data[key]);
-		}
-
-		if (key === 'updateIds') {
-			return Array.isArray(data[key]);
-		}
-
-		if (key === 'updateCounter') {
-			return isFinite(data[key]) && data[key] !== null;
-		}
-
-		if (key === 'updateType') {
-			return Object.values(UpdateType).includes(data[key]);
-		}
-
-		return false;
-	};
-
-	return keys.every(checkEvery);
-}
+import coreStorageDataValidator from '../validators/core-storage-data';
 
 export default class StoredList<T extends {id: number}> {
 	public static async create<T extends {id: number}>(name: string, storage: Storage.StorageArea): Promise<StoredList<T>> {
@@ -52,7 +22,7 @@ export default class StoredList<T extends {id: number}> {
 		return list;
 	}
 
-	public onUpdate: EventEmitter<IStoredListUpdateInfo<T>, UpdateType>;
+	public onUpdate: EventEmitter<UpdateType>;
 	private items: T[];
 	private updateCounter: number;
 	private deleted: boolean;
@@ -215,6 +185,11 @@ export default class StoredList<T extends {id: number}> {
 		// Write an validator
 		const info: ICoreStorageData<T> = changeInfo.newValue as ICoreStorageData<T>;
 
+		if (!coreStorageDataValidator.validate(info)) {
+			console.warn('Handle invalid changes.', changes);
+			return;
+		}
+
 		if (info.updateType === UpdateType.None) {
 			console.warn('Some other StoredList has been recreate the storage, when this StoredList is exists.');
 			await this.delete(true);
@@ -232,7 +207,13 @@ export default class StoredList<T extends {id: number}> {
 
 		this.localUpdate(info);
 
-		this.onUpdate.emit(info.updateType, {ids: info.updateIds, type: info.updateType, external: true});
+		const updateInfo: IStoredListUpdateInfo<T> = {
+			ids: info.updateIds, 
+			type: info.updateType, 
+			external: true
+		};
+
+		this.onUpdate.emit(info.updateType, updateInfo);
 	};
 
 	private localUpdate(info: ICoreStorageData<T>) {
@@ -292,14 +273,13 @@ export default class StoredList<T extends {id: number}> {
 
 		const response = await storage.get(name);
 
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-call
 		if (!has(response, name)) {
 			return false;
 		}
 
 		const storageData: unknown = response[name];
 
-		return validateCoreStorageData(storageData);
+		return coreStorageDataValidator.validate(storageData);
 	}
 
 	private async loadStorageData(): Promise<void> {
@@ -327,7 +307,9 @@ export default class StoredList<T extends {id: number}> {
 			updateType: info.updateType,
 		};
 
-		this.onUpdate.emit(info.updateType, {ids: info.updateIds, type: info.updateType, external: false});
+		const updateInfo: IStoredListUpdateInfo<T> = {ids: info.updateIds, type: info.updateType, external: false};
+
+		this.onUpdate.emit(info.updateType, updateInfo);
 
 		await this.storage.set({[this.name]: saveInfo});
 	}

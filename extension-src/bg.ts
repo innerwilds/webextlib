@@ -1,22 +1,27 @@
 import {Browser} from 'webextension-polyfill';
-import {UpdateType} from '../src';
-import StoredList from '../src/core/stored-list';
+import { clearTarget, deleteEntity, deleteTarget, saveEntity, StorageEventEmitter } from '../src';
 import {Entity} from './entity';
 
 declare let browser: Browser;
 
-async function setup() {
-	const list = await StoredList.create<Entity>('Ababa', browser.storage.local);
+console.log("LAUNCH BACKGROUND!");
 
-	list.onUpdate.on(UpdateType.ItemAdded, i => {
-		console.log('BG Added: ', i);
-	});
+const entity = new Entity(0, "Jake");
 
-	list.onUpdate.on(UpdateType.ItemDeleted, i => {
-		console.log('BG Removed: ', i);
-	});
+StorageEventEmitter.addListener('*:saved', console.log);
+StorageEventEmitter.addListener('*:deleted', console.log);
+StorageEventEmitter.addListener('*:destroyed', console.log);
+StorageEventEmitter.addListener('*:cleared', console.log);
+StorageEventEmitter.addListener('*:updated', console.log);
 
-	await list.append(new Entity(0, 'Jake'));
-}
+saveEntity('list', entity)
+.then(async () => {
 
-setup().then(console.log).catch(console.error);
+	entity.name = "Paul";
+
+	await saveEntity('list', entity);
+	await deleteEntity('list', entity.id);
+	await clearTarget('list');
+	await deleteTarget('list');
+
+});

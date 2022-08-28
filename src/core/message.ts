@@ -1,30 +1,79 @@
 import type {Runtime} from 'webextension-polyfill';
-import type {ICoreMessage, ICreateMessage, IMessage, IMessageStream, IResponse, ISendMessage} from '../types';
+import type {ICoreMessage, IMessage, IResponse} from '../types';
 import {Status} from '../const';
+import messageResponseValidator from '../validators/message-response';
+import coreMessageValidator from '../validators/core-message';
 
 const keys = new Set();
 
-export const deleteMessage = function (key: string) {
-	keys.delete(key);
-};
+export default class Message<T, R> {
+	private readonly listeners: Array<(message: IMessage<T, R>) => void>;
 
-const createMessage: ICreateMessage = function <T, R>(key: string) {
-	if (keys.has(key)) {
-		throw new TypeError('Key ' + key + ' is not already unique');
+	constructor(private readonly key: string) {
+		if (keys.has(key)) {
+			throw new TypeError('Key ' + key + ' is in use');
+		}
+
+		this.listeners = [];
+
+		browser.runtime.onMessage.addListener(this.handleMessage);
 	}
 
-	return [createSendMessage<T, R>(key), createMessageStream(key)];
-};
+	public async sendMessage(data: T, tabId?: number): Promise<IResponse<R>> {
+		const {key} = this;
 
-const createMessageStream = <T, R>(key: string): IMessageStream<T, R> => {
-	const fns: Array<(message: IMessage<T, R>) => void> = [];
-
-	browser.runtime.onMessage.addListener(handleMessage);
-
-	function handleMessage(coreMessage: ICoreMessage<T>, sender: Runtime.MessageSender) {
 		if (!keys.has(key)) {
-			del();
+			throw new TypeError('Message has been deleted.');
 		}
+
+		const coreMessage: ICoreMessage<T> = {
+			key,
+			data,
+		};
+
+		let response: IResponse<R>;
+
+		if (typeof tabId === 'number' && !isNaN(tabId)) {
+			response = (await browser.tabs.sendMessage(tabId, coreMessage)) as IResponse<R>;
+		} else {
+			response = (await browser.runtime.sendMessage(coreMessage)) as IResponse<R>;
+		}
+
+		if (!messageResponseValidator.validate(response)) {
+			return {status: Status.InvalidResponse};
+		}
+
+		return response;
+	}
+
+	public on(listener: (message: IMessage<T, R>) => void) {
+		const {listeners} = this;
+
+		if (listeners.includes(listener)) {
+			return;
+		}
+
+		listeners.push(listener);
+	}
+
+	public off(listener: (message: IMessage<T, R>) => void) {
+		const {listeners} = this;
+
+		const index = listeners.indexOf(listener);
+
+		if (index > -1) {
+			return;
+		}
+
+		listeners.splice(index, 1);
+	}
+
+	private readonly handleMessage = (coreMessage: ICoreMessage<T>, sender: Runtime.MessageSender) => {
+		if (!coreMessageValidator.validate(coreMessage)) {
+			return;
+		}
+
+		const {key, listeners} = this;
 
 		if (coreMessage.key !== key) {
 			return;
@@ -33,14 +82,16 @@ const createMessageStream = <T, R>(key: string): IMessageStream<T, R> => {
 		let isClosed = false;
 
 		return new Promise(resolve => {
-			for (const fn of fns) {
+			for (const listener of listeners) {
 				const message: IMessage<T, R> = {
 					data: coreMessage.data,
 					sender,
 					sendResponse,
 					sendStatus,
 				};
-				fn(message);
+				try {
+					listener(message);
+				} catch {}
 			}
 
 			function sendResponse(data: R) {
@@ -69,64 +120,5 @@ const createMessageStream = <T, R>(key: string): IMessageStream<T, R> => {
 				resolve(response);
 			}
 		});
-	}
-
-	function del() {
-		browser.runtime.onMessage.removeListener(handleMessage);
-		fns.length = 0;
-	}
-
-	return {
-		subscribe(fn) {
-			if (!keys.has(key)) {
-				del();
-			}
-
-			if (fns.includes(fn)) {
-				return;
-			}
-
-			fns.push(fn);
-		},
-		unsubscribe(fn) {
-			if (!keys.has(key)) {
-				del();
-			}
-
-			const index = fns.indexOf(fn);
-			if (index > -1) {
-				return;
-			}
-
-			fns.push(fn);
-		},
 	};
-};
-
-const createSendMessage = <T, R>(key: string): ISendMessage<T, R> => {
-	async function sendMessage(data: T, tabId?: number): Promise<IResponse<R>> {
-		if (!keys.has(key)) {
-			throw new TypeError('Message has been deleted.');
-		}
-
-		const coreMessage: ICoreMessage<T> = {
-			key,
-			data,
-		};
-
-		let response: IResponse<R>;
-
-		// Write an validator for IResponse
-		if (typeof tabId === 'number' && !isNaN(tabId)) {
-			response = (await browser.tabs.sendMessage(tabId, coreMessage)) as IResponse<R>;
-		} else {
-			response = (await browser.runtime.sendMessage(coreMessage)) as IResponse<R>;
-		}
-
-		return response;
-	}
-
-	return sendMessage;
-};
-
-export {createMessage, Status};
+}
