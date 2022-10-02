@@ -1,5 +1,5 @@
 {
-  "include": ["src", "extension-src"],
+  "include": ["src", "tests"],
   "compilerOptions": {
     "lib": ["ESNext", "DOM"],
     "target": "ESNext",

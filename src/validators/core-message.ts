@@ -1,14 +1,5 @@
-import { isString } from 'underscore';
-import { has } from 'underscore';
-import { isObject } from 'underscore';
-import {ICoreMessage, Validator} from '../types';
-
-/*
-type ICoreMessage<T> = {
-	key: string;
-	data: T;
-};
- */
+import { isString, has, isObject } from 'underscore';
+import { ICoreMessage, Validator } from '../types';
 
 const coreMessageValidator: Validator<ICoreMessage<any>> = {
 	validate(value: ICoreMessage<any>): value is ICoreMessage<any> {

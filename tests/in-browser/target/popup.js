@@ -278,7 +278,7 @@
 
     // Retrieve the names of an object's own properties.
     // Delegates to **ECMAScript 5**'s native `Object.keys`.
-    function keys(obj) {
+    function keys$1(obj) {
       if (!isObject(obj)) return [];
       if (nativeKeys) return nativeKeys(obj);
       var keys = [];
@@ -298,12 +298,12 @@
       if (typeof length == 'number' && (
         isArray(obj) || isString(obj) || isArguments$1(obj)
       )) return length === 0;
-      return getLength(keys(obj)) === 0;
+      return getLength(keys$1(obj)) === 0;
     }
 
     // Returns whether an object has a given set of `key:value` pairs.
     function isMatch(object, attrs) {
-      var _keys = keys(attrs), length = _keys.length;
+      var _keys = keys$1(attrs), length = _keys.length;
       if (object == null) return !length;
       var obj = Object(object);
       for (var i = 0; i < length; i++) {
@@ -454,10 +454,10 @@
         }
       } else {
         // Deep compare objects.
-        var _keys = keys(a), key;
+        var _keys = keys$1(a), key;
         length = _keys.length;
         // Ensure that both objects contain the same number of properties before comparing deep equality.
-        if (keys(b).length !== length) return false;
+        if (keys$1(b).length !== length) return false;
         while (length--) {
           // Deep compare each member
           key = _keys[length];
@@ -529,7 +529,7 @@
 
     // Retrieve the values of an object's properties.
     function values(obj) {
-      var _keys = keys(obj);
+      var _keys = keys$1(obj);
       var length = _keys.length;
       var values = Array(length);
       for (var i = 0; i < length; i++) {
@@ -541,7 +541,7 @@
     // Convert an object into a list of `[key, value]` pairs.
     // The opposite of `_.object` with one argument.
     function pairs(obj) {
-      var _keys = keys(obj);
+      var _keys = keys$1(obj);
       var length = _keys.length;
       var pairs = Array(length);
       for (var i = 0; i < length; i++) {
@@ -553,7 +553,7 @@
     // Invert the keys and values of an object. The values must be serializable.
     function invert(obj) {
       var result = {};
-      var _keys = keys(obj);
+      var _keys = keys$1(obj);
       for (var i = 0, length = _keys.length; i < length; i++) {
         result[obj[_keys[i]]] = _keys[i];
       }
@@ -594,7 +594,7 @@
     // Assigns a given object with all the own properties in the passed-in
     // object(s).
     // (https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object/assign)
-    var extendOwn = createAssigner(keys);
+    var extendOwn = createAssigner(keys$1);
 
     // Fill in a given object with default properties.
     var defaults = createAssigner(allKeys, true);
@@ -758,7 +758,7 @@
     // In contrast to `_.map` it returns an object.
     function mapObject(obj, iteratee, context) {
       iteratee = cb(iteratee, context);
-      var _keys = keys(obj),
+      var _keys = keys$1(obj),
           length = _keys.length,
           results = {};
       for (var index = 0; index < length; index++) {
@@ -808,7 +808,7 @@
         return map[match];
       };
       // Regexes for identifying a key that needs to be escaped.
-      var source = '(?:' + keys(map).join('|') + ')';
+      var source = '(?:' + keys$1(map).join('|') + ')';
       var testRegexp = RegExp(source);
       var replaceRegexp = RegExp(source, 'g');
       return function(string) {
@@ -1229,7 +1229,7 @@
     // Returns the first key on an object that passes a truth test.
     function findKey(obj, predicate, context) {
       predicate = cb(predicate, context);
-      var _keys = keys(obj), key;
+      var _keys = keys$1(obj), key;
       for (var i = 0, length = _keys.length; i < length; i++) {
         key = _keys[i];
         if (predicate(obj[key], key, obj)) return key;
@@ -1328,7 +1328,7 @@
           iteratee(obj[i], i, obj);
         }
       } else {
-        var _keys = keys(obj);
+        var _keys = keys$1(obj);
         for (i = 0, length = _keys.length; i < length; i++) {
           iteratee(obj[_keys[i]], _keys[i], obj);
         }
@@ -1339,7 +1339,7 @@
     // Return the results of applying the iteratee to each element.
     function map(obj, iteratee, context) {
       iteratee = cb(iteratee, context);
-      var _keys = !isArrayLike(obj) && keys(obj),
+      var _keys = !isArrayLike(obj) && keys$1(obj),
           length = (_keys || obj).length,
           results = Array(length);
       for (var index = 0; index < length; index++) {
@@ -1354,7 +1354,7 @@
       // Wrap code that reassigns argument variables in a separate function than
       // the one that accesses `arguments.length` to avoid a perf hit. (#1991)
       var reducer = function(obj, iteratee, memo, initial) {
-        var _keys = !isArrayLike(obj) && keys(obj),
+        var _keys = !isArrayLike(obj) && keys$1(obj),
             length = (_keys || obj).length,
             index = dir > 0 ? 0 : length - 1;
         if (!initial) {
@@ -1399,7 +1399,7 @@
     // Determine whether all of the elements pass a truth test.
     function every(obj, predicate, context) {
       predicate = cb(predicate, context);
-      var _keys = !isArrayLike(obj) && keys(obj),
+      var _keys = !isArrayLike(obj) && keys$1(obj),
           length = (_keys || obj).length;
       for (var index = 0; index < length; index++) {
         var currentKey = _keys ? _keys[index] : index;
@@ -1411,7 +1411,7 @@
     // Determine if at least one element in the object passes a truth test.
     function some(obj, predicate, context) {
       predicate = cb(predicate, context);
-      var _keys = !isArrayLike(obj) && keys(obj),
+      var _keys = !isArrayLike(obj) && keys$1(obj),
           length = (_keys || obj).length;
       for (var index = 0; index < length; index++) {
         var currentKey = _keys ? _keys[index] : index;
@@ -1613,7 +1613,7 @@
     // Return the number of elements in a collection.
     function size(obj) {
       if (obj == null) return 0;
-      return isArrayLike(obj) ? obj.length : keys(obj).length;
+      return isArrayLike(obj) ? obj.length : keys$1(obj).length;
     }
 
     // Internal `_.pick` helper function to determine whether `key` is an enumerable
@@ -1907,7 +1907,7 @@
         isWeakMap: isWeakMap,
         isSet: isSet,
         isWeakSet: isWeakSet,
-        keys: keys,
+        keys: keys$1,
         allKeys: allKeys,
         values: values,
         pairs: pairs,
@@ -2034,6 +2034,118 @@
     // Legacy Node.js API.
     _._ = _;
 
+    const messageResponseValidator = {
+        validate(value) {
+            return isObject(value) && Object.values(Status).includes(value.status);
+        },
+    };
+
+    const coreMessageValidator = {
+        validate(value) {
+            return isObject(value) && isString(value.key) && has(value, 'data');
+        },
+    };
+
+    const keys = new Set();
+    class Message {
+        key;
+        listeners;
+        constructor(key) {
+            this.key = key;
+            if (keys.has(key)) {
+                throw new TypeError('Key ' + key + ' is in use');
+            }
+            keys.add(key);
+            this.listeners = [];
+            browser.runtime.onMessage.addListener(this.handleMessage);
+        }
+        async sendMessage(data, tabId) {
+            const { key } = this;
+            if (!keys.has(key)) {
+                throw new TypeError('Message has been deleted.');
+            }
+            const coreMessage = {
+                key,
+                data,
+            };
+            let response;
+            if (typeof tabId === 'number' && !isNaN(tabId)) {
+                response = (await browser.tabs.sendMessage(tabId, coreMessage));
+            }
+            else {
+                response = (await browser.runtime.sendMessage(coreMessage));
+            }
+            if (!messageResponseValidator.validate(response)) {
+                return { status: Status.InvalidResponse };
+            }
+            return response;
+        }
+        on(listener) {
+            const { listeners } = this;
+            if (listeners.includes(listener)) {
+                return;
+            }
+            listeners.push(listener);
+        }
+        off(listener) {
+            const { listeners } = this;
+            const index = listeners.indexOf(listener);
+            if (index > -1) {
+                return;
+            }
+            listeners.splice(index, 1);
+        }
+        handleMessage = (coreMessage, sender) => {
+            if (!coreMessageValidator.validate(coreMessage)) {
+                return;
+            }
+            const { key, listeners } = this;
+            if (coreMessage.key !== key) {
+                return;
+            }
+            let isClosed = false;
+            return new Promise(resolve => {
+                for (const listener of listeners) {
+                    const request = {
+                        sender,
+                        sendResponse,
+                        sendStatus,
+                    };
+                    try {
+                        listener(coreMessage.data, request);
+                    }
+                    catch { }
+                }
+                function sendResponse(data) {
+                    if (isClosed) {
+                        throw new TypeError('Response already sent');
+                    }
+                    isClosed = true;
+                    const response = {
+                        status: Status.Success,
+                        data,
+                    };
+                    resolve(response);
+                }
+                function sendStatus(status, error) {
+                    if (isClosed) {
+                        throw new TypeError('Response already sent');
+                    }
+                    isClosed = true;
+                    const response = {
+                        status,
+                        error,
+                    };
+                    resolve(response);
+                }
+            });
+        };
+        destroy() {
+            browser.runtime.onMessage.removeListener(this.handleMessage);
+            keys.delete(this.key);
+        }
+    }
+
     var EnvironmentType;
     (function (EnvironmentType) {
         EnvironmentType[EnvironmentType["Tab"] = 0] = "Tab";
@@ -2047,7 +2159,7 @@
         }
         const isMozExtension = Boolean(/^moz-extension:$/i.exec(location.protocol));
         if (!isMozExtension) {
-            throw new TypeError('Environment type is not recognized. Is not extension page');
+            throw new TypeError('Environment type is not recognized. Protocol not recognized');
         }
         const isBackground = location.pathname.includes('background');
         if (isBackground) {
@@ -2059,537 +2171,34 @@
         }
         throw new TypeError('Environment type is not recognized. Is extension page, but pathname is not valid');
     }
-    ({
-        environmentType: detectEnvironmentType(),
-        environmentTypes: EnvironmentType,
-    });
+    const type = detectEnvironmentType();
 
-    var eventemitter3 = {exports: {}};
-
-    (function (module) {
-
-    	var has = Object.prototype.hasOwnProperty
-    	  , prefix = '~';
-
-    	/**
-    	 * Constructor to create a storage for our `EE` objects.
-    	 * An `Events` instance is a plain object whose properties are event names.
-    	 *
-    	 * @constructor
-    	 * @private
-    	 */
-    	function Events() {}
-
-    	//
-    	// We try to not inherit from `Object.prototype`. In some engines creating an
-    	// instance in this way is faster than calling `Object.create(null)` directly.
-    	// If `Object.create(null)` is not supported we prefix the event names with a
-    	// character to make sure that the built-in object properties are not
-    	// overridden or used as an attack vector.
-    	//
-    	if (Object.create) {
-    	  Events.prototype = Object.create(null);
-
-    	  //
-    	  // This hack is needed because the `__proto__` property is still inherited in
-    	  // some old browsers like Android 4, iPhone 5.1, Opera 11 and Safari 5.
-    	  //
-    	  if (!new Events().__proto__) prefix = false;
-    	}
-
-    	/**
-    	 * Representation of a single event listener.
-    	 *
-    	 * @param {Function} fn The listener function.
-    	 * @param {*} context The context to invoke the listener with.
-    	 * @param {Boolean} [once=false] Specify if the listener is a one-time listener.
-    	 * @constructor
-    	 * @private
-    	 */
-    	function EE(fn, context, once) {
-    	  this.fn = fn;
-    	  this.context = context;
-    	  this.once = once || false;
-    	}
-
-    	/**
-    	 * Add a listener for a given event.
-    	 *
-    	 * @param {EventEmitter} emitter Reference to the `EventEmitter` instance.
-    	 * @param {(String|Symbol)} event The event name.
-    	 * @param {Function} fn The listener function.
-    	 * @param {*} context The context to invoke the listener with.
-    	 * @param {Boolean} once Specify if the listener is a one-time listener.
-    	 * @returns {EventEmitter}
-    	 * @private
-    	 */
-    	function addListener(emitter, event, fn, context, once) {
-    	  if (typeof fn !== 'function') {
-    	    throw new TypeError('The listener must be a function');
-    	  }
-
-    	  var listener = new EE(fn, context || emitter, once)
-    	    , evt = prefix ? prefix + event : event;
-
-    	  if (!emitter._events[evt]) emitter._events[evt] = listener, emitter._eventsCount++;
-    	  else if (!emitter._events[evt].fn) emitter._events[evt].push(listener);
-    	  else emitter._events[evt] = [emitter._events[evt], listener];
-
-    	  return emitter;
-    	}
-
-    	/**
-    	 * Clear event by name.
-    	 *
-    	 * @param {EventEmitter} emitter Reference to the `EventEmitter` instance.
-    	 * @param {(String|Symbol)} evt The Event name.
-    	 * @private
-    	 */
-    	function clearEvent(emitter, evt) {
-    	  if (--emitter._eventsCount === 0) emitter._events = new Events();
-    	  else delete emitter._events[evt];
-    	}
-
-    	/**
-    	 * Minimal `EventEmitter` interface that is molded against the Node.js
-    	 * `EventEmitter` interface.
-    	 *
-    	 * @constructor
-    	 * @public
-    	 */
-    	function EventEmitter() {
-    	  this._events = new Events();
-    	  this._eventsCount = 0;
-    	}
-
-    	/**
-    	 * Return an array listing the events for which the emitter has registered
-    	 * listeners.
-    	 *
-    	 * @returns {Array}
-    	 * @public
-    	 */
-    	EventEmitter.prototype.eventNames = function eventNames() {
-    	  var names = []
-    	    , events
-    	    , name;
-
-    	  if (this._eventsCount === 0) return names;
-
-    	  for (name in (events = this._events)) {
-    	    if (has.call(events, name)) names.push(prefix ? name.slice(1) : name);
-    	  }
-
-    	  if (Object.getOwnPropertySymbols) {
-    	    return names.concat(Object.getOwnPropertySymbols(events));
-    	  }
-
-    	  return names;
-    	};
-
-    	/**
-    	 * Return the listeners registered for a given event.
-    	 *
-    	 * @param {(String|Symbol)} event The event name.
-    	 * @returns {Array} The registered listeners.
-    	 * @public
-    	 */
-    	EventEmitter.prototype.listeners = function listeners(event) {
-    	  var evt = prefix ? prefix + event : event
-    	    , handlers = this._events[evt];
-
-    	  if (!handlers) return [];
-    	  if (handlers.fn) return [handlers.fn];
-
-    	  for (var i = 0, l = handlers.length, ee = new Array(l); i < l; i++) {
-    	    ee[i] = handlers[i].fn;
-    	  }
-
-    	  return ee;
-    	};
-
-    	/**
-    	 * Return the number of listeners listening to a given event.
-    	 *
-    	 * @param {(String|Symbol)} event The event name.
-    	 * @returns {Number} The number of listeners.
-    	 * @public
-    	 */
-    	EventEmitter.prototype.listenerCount = function listenerCount(event) {
-    	  var evt = prefix ? prefix + event : event
-    	    , listeners = this._events[evt];
-
-    	  if (!listeners) return 0;
-    	  if (listeners.fn) return 1;
-    	  return listeners.length;
-    	};
-
-    	/**
-    	 * Calls each of the listeners registered for a given event.
-    	 *
-    	 * @param {(String|Symbol)} event The event name.
-    	 * @returns {Boolean} `true` if the event had listeners, else `false`.
-    	 * @public
-    	 */
-    	EventEmitter.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
-    	  var evt = prefix ? prefix + event : event;
-
-    	  if (!this._events[evt]) return false;
-
-    	  var listeners = this._events[evt]
-    	    , len = arguments.length
-    	    , args
-    	    , i;
-
-    	  if (listeners.fn) {
-    	    if (listeners.once) this.removeListener(event, listeners.fn, undefined, true);
-
-    	    switch (len) {
-    	      case 1: return listeners.fn.call(listeners.context), true;
-    	      case 2: return listeners.fn.call(listeners.context, a1), true;
-    	      case 3: return listeners.fn.call(listeners.context, a1, a2), true;
-    	      case 4: return listeners.fn.call(listeners.context, a1, a2, a3), true;
-    	      case 5: return listeners.fn.call(listeners.context, a1, a2, a3, a4), true;
-    	      case 6: return listeners.fn.call(listeners.context, a1, a2, a3, a4, a5), true;
-    	    }
-
-    	    for (i = 1, args = new Array(len -1); i < len; i++) {
-    	      args[i - 1] = arguments[i];
-    	    }
-
-    	    listeners.fn.apply(listeners.context, args);
-    	  } else {
-    	    var length = listeners.length
-    	      , j;
-
-    	    for (i = 0; i < length; i++) {
-    	      if (listeners[i].once) this.removeListener(event, listeners[i].fn, undefined, true);
-
-    	      switch (len) {
-    	        case 1: listeners[i].fn.call(listeners[i].context); break;
-    	        case 2: listeners[i].fn.call(listeners[i].context, a1); break;
-    	        case 3: listeners[i].fn.call(listeners[i].context, a1, a2); break;
-    	        case 4: listeners[i].fn.call(listeners[i].context, a1, a2, a3); break;
-    	        default:
-    	          if (!args) for (j = 1, args = new Array(len -1); j < len; j++) {
-    	            args[j - 1] = arguments[j];
-    	          }
-
-    	          listeners[i].fn.apply(listeners[i].context, args);
-    	      }
-    	    }
-    	  }
-
-    	  return true;
-    	};
-
-    	/**
-    	 * Add a listener for a given event.
-    	 *
-    	 * @param {(String|Symbol)} event The event name.
-    	 * @param {Function} fn The listener function.
-    	 * @param {*} [context=this] The context to invoke the listener with.
-    	 * @returns {EventEmitter} `this`.
-    	 * @public
-    	 */
-    	EventEmitter.prototype.on = function on(event, fn, context) {
-    	  return addListener(this, event, fn, context, false);
-    	};
-
-    	/**
-    	 * Add a one-time listener for a given event.
-    	 *
-    	 * @param {(String|Symbol)} event The event name.
-    	 * @param {Function} fn The listener function.
-    	 * @param {*} [context=this] The context to invoke the listener with.
-    	 * @returns {EventEmitter} `this`.
-    	 * @public
-    	 */
-    	EventEmitter.prototype.once = function once(event, fn, context) {
-    	  return addListener(this, event, fn, context, true);
-    	};
-
-    	/**
-    	 * Remove the listeners of a given event.
-    	 *
-    	 * @param {(String|Symbol)} event The event name.
-    	 * @param {Function} fn Only remove the listeners that match this function.
-    	 * @param {*} context Only remove the listeners that have this context.
-    	 * @param {Boolean} once Only remove one-time listeners.
-    	 * @returns {EventEmitter} `this`.
-    	 * @public
-    	 */
-    	EventEmitter.prototype.removeListener = function removeListener(event, fn, context, once) {
-    	  var evt = prefix ? prefix + event : event;
-
-    	  if (!this._events[evt]) return this;
-    	  if (!fn) {
-    	    clearEvent(this, evt);
-    	    return this;
-    	  }
-
-    	  var listeners = this._events[evt];
-
-    	  if (listeners.fn) {
-    	    if (
-    	      listeners.fn === fn &&
-    	      (!once || listeners.once) &&
-    	      (!context || listeners.context === context)
-    	    ) {
-    	      clearEvent(this, evt);
-    	    }
-    	  } else {
-    	    for (var i = 0, events = [], length = listeners.length; i < length; i++) {
-    	      if (
-    	        listeners[i].fn !== fn ||
-    	        (once && !listeners[i].once) ||
-    	        (context && listeners[i].context !== context)
-    	      ) {
-    	        events.push(listeners[i]);
-    	      }
-    	    }
-
-    	    //
-    	    // Reset the array, or remove it completely if we have no more listeners.
-    	    //
-    	    if (events.length) this._events[evt] = events.length === 1 ? events[0] : events;
-    	    else clearEvent(this, evt);
-    	  }
-
-    	  return this;
-    	};
-
-    	/**
-    	 * Remove all listeners, or those of the specified event.
-    	 *
-    	 * @param {(String|Symbol)} [event] The event name.
-    	 * @returns {EventEmitter} `this`.
-    	 * @public
-    	 */
-    	EventEmitter.prototype.removeAllListeners = function removeAllListeners(event) {
-    	  var evt;
-
-    	  if (event) {
-    	    evt = prefix ? prefix + event : event;
-    	    if (this._events[evt]) clearEvent(this, evt);
-    	  } else {
-    	    this._events = new Events();
-    	    this._eventsCount = 0;
-    	  }
-
-    	  return this;
-    	};
-
-    	//
-    	// Alias methods names because people roll like that.
-    	//
-    	EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
-    	EventEmitter.prototype.addListener = EventEmitter.prototype.on;
-
-    	//
-    	// Expose the prefix.
-    	//
-    	EventEmitter.prefixed = prefix;
-
-    	//
-    	// Allow `EventEmitter` to be imported as module namespace.
-    	//
-    	EventEmitter.EventEmitter = EventEmitter;
-
-    	//
-    	// Expose the module.
-    	//
-    	{
-    	  module.exports = EventEmitter;
-    	}
-    } (eventemitter3));
-
-    const storage = browser.storage.local;
-    /*
-        Event types:
-            <target>:saved -> SavedInfo
-            <target>:deleted -> DeletedInfo
-            <target>:destroyed -> TargetDeletedInfo
-            <target>:cleared -> TargetClearedInfo
-            <target>:updated -> UpdatedInfo
-            *:saved -> EntityUpdateInfo
-            *:deleted -> EntityUpdateInfo
-            *:destroyed -> TargetUpdateInfo
-            *:updated -> EntityUpdateInfo
-            *:cleared -> TargetClearedInfo
-    */
-    const ee = new eventemitter3.exports.EventEmitter();
-    function createEntityKey(target, id) {
-        return "@@@" + target + "_" + id;
+    const key = "^#@testPassedNumber";
+    async function passed(name) {
+        const rec = await browser.storage.local.get(key);
+        let n = rec[key] ? rec[key] : 1;
+        console.log("Test " + name + " is passed #" + n);
+        browser.storage.local.set({ [key]: ++n });
     }
-    async function loadIds(target) {
-        const key = "$$$" + target;
-        const response = await storage.get(key);
-        return isArray(response[key]) ? response[key] : [];
-    }
-    async function saveEntity(target, entity) {
-        const key = createEntityKey(target, entity.id);
-        const ids = await loadIds(target);
-        let isUpdate = false;
-        if (!ids.includes(entity.id)) {
-            ids.push(entity.id);
-        }
-        else {
-            isUpdate = true;
-        }
-        await storage.set({
-            [key]: entity,
-            ["$$$" + target]: ids,
-            entitySaved: {
-                target,
-                id: entity.id,
-                isUpdate
-            }
-        });
-    }
-    async function deleteEntity(target, entityId) {
-        const ids = await loadIds(target);
-        const index = ids.indexOf(entityId);
-        if (index === -1) {
-            return;
-        }
-        ids.splice(index);
-        const key = createEntityKey(target, entityId);
-        await storage.remove(key);
-        await storage.set({
-            ['$$$' + target]: ids,
-            entityDeleted: {
-                target,
-                id: entityId,
-            }
-        });
-    }
-    async function deleteTarget(target) {
-        const ids = await loadIds(target);
-        const keys = ids.map(id => createEntityKey(target, id));
-        keys.push("$$$" + target);
-        await storage.remove(keys);
-        await storage.set({
-            targetDeleted: {
-                target
-            }
-        });
-    }
-    async function clearTarget(target) {
-        const ids = await loadIds(target);
-        const keys = ids.map(id => createEntityKey(target, id));
-        await storage.remove(keys);
-        await storage.set({
-            ['$$$' + target]: [],
-            targetCleared: {
-                target
-            }
-        });
-    }
-    var UpdateType;
-    (function (UpdateType) {
-        UpdateType["TargetDeleted"] = "TargetDeleted";
-        UpdateType["EntitySaved"] = "EntitySaved";
-        UpdateType["EntityDeleted"] = "EntityDeleted";
-        UpdateType["TargetCleared"] = "TargetCleared";
-        UpdateType["EntityUpdated"] = "EntityUpdated";
-    })(UpdateType || (UpdateType = {}));
-    function dispatch(target, type, event) {
-        const targetEvent = target + ':' + type;
-        const anyTargetEvent = '*:' + type;
-        const anyEvent = '*';
-        const targetCount = ee.listenerCount(targetEvent);
-        const anyTargetCount = ee.listenerCount(anyTargetEvent);
-        const anyCount = ee.listenerCount(anyEvent);
-        if (targetCount > 0) {
-            ee.emit(targetEvent, event);
-        }
-        if (anyTargetCount > 0) {
-            ee.emit(anyTargetEvent, event);
-        }
-        if (anyCount > 0) {
-            ee.emit(anyEvent, event);
-        }
-    }
-    function onSaved(changes) {
-        const info = changes.newValue;
-        const event = {
-            type: info.isUpdate ? UpdateType.EntityUpdated : UpdateType.EntitySaved,
-            info: {
-                target: info.target,
-                id: info.id
-            },
-        };
-        if (info.isUpdate) {
-            dispatch(info.target, 'updated', event);
-        }
-        else {
-            dispatch(info.target, 'saved', event);
-        }
-    }
-    function onDeleted(changes) {
-        const info = changes.newValue;
-        const event = {
-            type: UpdateType.EntityDeleted,
-            info,
-        };
-        dispatch(info.target, 'deleted', event);
-    }
-    function onTargetDeleted(changes) {
-        const info = changes.newValue;
-        const event = {
-            type: UpdateType.TargetDeleted,
-            info,
-        };
-        dispatch(info.target, 'destroyed', event);
-    }
-    function onTargetCleared(changes) {
-        const info = changes.newValue;
-        const event = {
-            type: UpdateType.TargetCleared,
-            info,
-        };
-        dispatch(info.target, 'cleared', event);
-    }
-    storage.onChanged.addListener((changes) => {
-        if (changes.entitySaved) {
-            onSaved(changes.entitySaved);
-        }
-        else if (changes.entityDeleted) {
-            onDeleted(changes.entityDeleted);
-        }
-        else if (changes.targetDeleted) {
-            onTargetDeleted(changes.targetDeleted);
-        }
-        else if (changes.targetCleared) {
-            onTargetCleared(changes.targetCleared);
+
+    const greater = new Message("greating");
+    greater.on(async (data, req) => {
+        const [target, message] = data.split(':');
+        if (target === "POPUP") {
+            req.sendResponse(message);
         }
     });
-
-    class Entity {
-        id;
-        name;
-        constructor(id, name) {
-            this.id = id;
-            this.name = name;
+    async function setup() {
+        const response = await greater.sendMessage("BG:hello");
+        if (response.data === "hello" && response.status === Status.Success && !response.error) {
+            passed("sending message to bg and waiting for response");
         }
+        greater.sendMessage('sendme');
     }
-
-    console.log("LAUNCH BACKGROUND!");
-    const entity = new Entity(0, "Jake");
-    ee.addListener('*:saved', console.log);
-    ee.addListener('*:deleted', console.log);
-    ee.addListener('*:destroyed', console.log);
-    ee.addListener('*:cleared', console.log);
-    ee.addListener('*:updated', console.log);
-    saveEntity('list', entity)
-        .then(async () => {
-        entity.name = "Paul";
-        await saveEntity('list', entity);
-        await deleteEntity('list', entity.id);
-        await clearTarget('list');
-        await deleteTarget('list');
-    });
+    setup();
+    if (EnvironmentType.Popup === type) {
+        passed("popup is popup by detector");
+    }
 
 })();
-//# sourceMappingURL=bg.js.map
+//# sourceMappingURL=popup.js.map

@@ -1,18 +1,22 @@
 import type {Runtime} from 'webextension-polyfill';
-import type {ICoreMessage, IMessage, IResponse} from '../types';
+import type {ICoreMessage, IRequest, IResponse} from '../types';
+
 import {Status} from '../const';
+
 import messageResponseValidator from '../validators/message-response';
 import coreMessageValidator from '../validators/core-message';
 
 const keys = new Set();
 
 export default class Message<T, R> {
-	private readonly listeners: Array<(message: IMessage<T, R>) => void>;
+	private readonly listeners: Array<(data: Readonly<T>, request: IRequest<R>) => void>;
 
 	constructor(private readonly key: string) {
 		if (keys.has(key)) {
 			throw new TypeError('Key ' + key + ' is in use');
 		}
+
+		keys.add(key);
 
 		this.listeners = [];
 
@@ -40,13 +44,13 @@ export default class Message<T, R> {
 		}
 
 		if (!messageResponseValidator.validate(response)) {
-			return {status: Status.InvalidResponse};
+			return { status: Status.InvalidResponse };
 		}
 
 		return response;
 	}
 
-	public on(listener: (message: IMessage<T, R>) => void) {
+	public on(listener: (data: Readonly<T>, request: IRequest<R>) => void) {
 		const {listeners} = this;
 
 		if (listeners.includes(listener)) {
@@ -56,7 +60,7 @@ export default class Message<T, R> {
 		listeners.push(listener);
 	}
 
-	public off(listener: (message: IMessage<T, R>) => void) {
+	public off(listener: (data: Readonly<T>, request: IRequest<R>) => void) {
 		const {listeners} = this;
 
 		const index = listeners.indexOf(listener);
@@ -83,14 +87,13 @@ export default class Message<T, R> {
 
 		return new Promise(resolve => {
 			for (const listener of listeners) {
-				const message: IMessage<T, R> = {
-					data: coreMessage.data,
+				const request: IRequest<R> = {
 					sender,
 					sendResponse,
 					sendStatus,
 				};
 				try {
-					listener(message);
+					listener(coreMessage.data, request);
 				} catch {}
 			}
 
@@ -100,10 +103,12 @@ export default class Message<T, R> {
 				}
 
 				isClosed = true;
+
 				const response: IResponse<R> = {
 					status: Status.Success,
 					data,
 				};
+
 				resolve(response);
 			}
 
@@ -113,12 +118,19 @@ export default class Message<T, R> {
 				}
 
 				isClosed = true;
+
 				const response: IResponse<R> = {
 					status,
 					error,
 				};
+				
 				resolve(response);
 			}
 		});
 	};
+
+	public destroy() {
+		browser.runtime.onMessage.removeListener(this.handleMessage);
+		keys.delete(this.key);
+	}
 }

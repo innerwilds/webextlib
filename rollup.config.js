@@ -25,21 +25,21 @@ export default [
 		plugins: [typescript(), nodeResolve({preferBuiltins: false, browser: true}), cjs(), json()],
 	},
 	{
-		input: 'extension-src/popup.ts',
+		input: 'tests/in-browser/src/popup.ts',
 		output: {
 			name: 'ExtensionPopup',
 			format: 'iife',
-			file: 'extension/dist/popup.js',
+			file: 'tests/in-browser/target/popup.js',
 			sourcemap: true,
 		},
 		plugins: [typescript(), nodeResolve({preferBuiltins: false, browser: true}), cjs(), json()],
 	},
 	{
-		input: 'extension-src/bg.ts',
+		input: 'tests/in-browser/src/bg.ts',
 		output: {
 			name: 'ExtensionBG',
 			format: 'iife',
-			file: 'extension/dist/bg.js',
+			file: 'tests/in-browser/target/bg.js',
 			sourcemap: true,
 		},
 		plugins: [typescript(), nodeResolve({preferBuiltins: false, browser: true}), cjs(), json()],

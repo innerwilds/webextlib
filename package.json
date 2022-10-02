@@ -16,8 +16,9 @@
     "build:dev": "rollup -c -w --environment NODE_ENV:development",
     "build:pro": "rollup -c --environment NODE_ENV:production",
     "build:types": "tsc -p tsconfig.d.json",
-    "prepublishOnly": "pnpm run build",
-    "start:firefox": "web-ext run --source-dir ./extension/ --browser-console"
+    "test": "run-s build test:firefox",
+    "test:firefox": "web-ext run --source-dir ./tests/in-browser/target",
+    "prepublishOnly": "pnpm run build"
   },
   "keywords": [],
   "author": "aflyyyka",
