@@ -24,24 +24,14 @@ export default [
 		},
 		plugins: [typescript(), nodeResolve({preferBuiltins: false, browser: true}), cjs(), json()],
 	},
+	// Testing
 	{
-		input: 'tests/in-browser/src/popup.ts',
+		input: 'src/index.ts',
 		output: {
-			name: 'ExtensionPopup',
+			name: 'webextlib',
 			format: 'iife',
-			file: 'tests/in-browser/target/popup.js',
-			sourcemap: true,
+			file: 'tests/in-browser/webextlib.js'
 		},
 		plugins: [typescript(), nodeResolve({preferBuiltins: false, browser: true}), cjs(), json()],
-	},
-	{
-		input: 'tests/in-browser/src/bg.ts',
-		output: {
-			name: 'ExtensionBG',
-			format: 'iife',
-			file: 'tests/in-browser/target/bg.js',
-			sourcemap: true,
-		},
-		plugins: [typescript(), nodeResolve({preferBuiltins: false, browser: true}), cjs(), json()],
-	},
+	}
 ];

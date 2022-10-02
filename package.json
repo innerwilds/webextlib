@@ -17,7 +17,7 @@
     "build:pro": "rollup -c --environment NODE_ENV:production",
     "build:types": "tsc -p tsconfig.d.json",
     "test": "run-s build test:firefox",
-    "test:firefox": "web-ext run --source-dir ./tests/in-browser/target",
+    "test:firefox": "web-ext run --source-dir ./tests/in-browser",
     "prepublishOnly": "pnpm run build"
   },
   "keywords": [],
@@ -28,27 +28,13 @@
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^13.3.0",
     "@rollup/plugin-typescript": "^8.3.4",
-    "@types/underscore": "^1.11.4",
     "@types/webextension-polyfill": "^0.9.0",
-    "@typescript-eslint/eslint-plugin": "^5.0.0",
-    "@typescript-eslint/parser": ">=5.28.0",
     "copyfiles": "^2.4.1",
-    "eslint": "^8.0.1",
-    "eslint-config-standard-with-typescript": "^22.0.0",
-    "eslint-plugin-import": "^2.25.2",
-    "eslint-plugin-n": "^15.0.0",
-    "eslint-plugin-promise": "^6.0.0",
     "npm-run-all": "^4.1.5",
     "rollup": "^2.78.0",
     "tslib": "^2.4.0",
     "typescript": "*",
     "web-ext": "^7.2.0",
     "webextension-polyfill": "^0.10.0"
-  },
-  "dependencies": {
-    "eventemitter3": "^4.0.7",
-    "reflect-metadata": "^0.1.13",
-    "underscore": "^1.13.4",
-    "uuid": "^8.3.2"
   }
 }

@@ -1,7 +1,6 @@
-import {CurrentEnvironment, EnvironmentType, Message, Status} from "../../../src";
-import passed from "./test";
+const {Message, EnvironmentType, CurrentEnvironment, Status} = webextlib;
 
-const greater = new Message<string, string>("greating");
+const greater = new Message("greating");
 
 greater.on(async (data, req) => {
     const [target, message] = data.split(':');
@@ -15,7 +14,7 @@ async function setup() {
     const response = await greater.sendMessage("BG:hello");
 
     if (response.data === "hello" && response.status === Status.Success && !response.error) {
-        passed("sending message to bg and waiting for response")
+        console.log("3. sending message to bg and waiting for response. Success.")
     }
 
     greater.sendMessage('sendme')
@@ -24,5 +23,5 @@ async function setup() {
 setup();
 
 if(EnvironmentType.Popup === CurrentEnvironment) {
-    passed("popup is popup by detector")
+    console.log("4. popup is popup by detector. Success.")
 }
