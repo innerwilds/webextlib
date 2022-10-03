@@ -18,7 +18,7 @@
     "build:types": "tsc -p tsconfig.d.json",
     "test": "run-s build test:firefox",
     "test:firefox": "web-ext run --source-dir ./tests/in-browser",
-    "prepublishOnly": "pnpm run build"
+    "prepare": "pnpm run build"
   },
   "keywords": [],
   "author": "aflyyyka",
