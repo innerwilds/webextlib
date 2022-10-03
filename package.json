@@ -1,6 +1,6 @@
 {
   "name": "webextension-library",
-  "version": "2.0.3",
+  "version": "1.0.0",
   "description": "The lib for TSRAuto",
   "main": "lib/index.cjs.js",
   "types": "types/index.d.ts",

@@ -1,8 +1,10 @@
-const {Message, EnvironmentType, CurrentEnvironment, Status} = webextlib;
+const {Messaging, Environment, CurrentEnvironment, Status} = webextlib;
 
-const greater = new Message("greating");
+const [greaterSender, greaterStream] = Messaging.createTube("greating");
 
-greater.on(async (data, req) => {
+const {failed, passed} = createPF("Popup Environment", 2);
+
+greaterStream.on(async (data, req) => {
     const [target, message] = data.split(':');
 
     if (target === "POPUP") {
@@ -11,17 +13,47 @@ greater.on(async (data, req) => {
 });
 
 async function setup() {
-    const response = await greater.sendMessage("BG:hello");
+    const response = await greaterSender.send("BG:hello");
 
     if (response.data === "hello" && response.status === Status.Success && !response.error) {
-        console.log("3. sending message to bg and waiting for response. Success.")
+        passed("sending message to bg and waiting for response.")
+    }
+    else {
+        failed("sending message to bg and waiting for response.")
     }
 
-    greater.sendMessage('sendme')
+    greaterSender.send('sendme')
 }
 
 setup();
 
-if(EnvironmentType.Popup === CurrentEnvironment) {
-    console.log("4. popup is popup by detector. Success.")
+if(Environment.Types.Popup === Environment.currentEnv) {
+    passed("popup is popup by detector.")
+}
+else {
+    failed("popup is popup by detector.")
+}
+
+function createPF(where, count) {
+    let c = 0;
+    return {
+        failed (m) {
+            c++;
+
+            console.log(where + ":: " + "%c" + m, "color: red; font-weight: 600;");
+
+            if (count === c) {
+                console.log(where + ":: " + "%cLast test was failed...", "color: red; font-weight: 900; font-variant: uppercase;");
+            }
+        },
+        passed (m) {
+            c++;
+
+            console.log(where + ":: " + "%c" + m, "color: rgb(0, 220, 0); font-weight: 600;");
+
+            if (count === c) {
+                console.log(where + ":: " + "%cLast test was complete!!!", "color: rgb(0, 220, 0); font-weight: 900;");
+            }
+        }
+    }
 }

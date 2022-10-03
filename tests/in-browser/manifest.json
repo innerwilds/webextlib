@@ -33,13 +33,13 @@
     },
   
   
-    "description": "TSR Automatic Download",
+    "description": "webextlib",
   
     "manifest_version": 2,
   
-    "name": "Webextension-Library",
+    "name": "webextlib-extension-for-testing",
   
-    "permissions": ["*<all_urls>", "unlimitedStorage", "downloads", "tabs", "storage"],
+    "permissions": ["<all_urls>", "tabs"],
   
     "version": "0.1"
   }

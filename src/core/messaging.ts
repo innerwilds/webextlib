@@ -1,34 +1,25 @@
 import type {Runtime} from 'webextension-polyfill';
-import type {ICoreMessage, IRequest, IResponse} from '../types';
+import type {ICoreMessage, IResponse, IRequest} from '../types';
 
 import {Status} from '../const';
 
 import messageResponseValidator from '../validators/message-response';
 import coreMessageValidator from '../validators/core-message';
 
-const keys = new Set();
+const senderKeys = new Set<string>();
+const streamKeys = new Set<string>();
 
-export default class Message<T, R> {
-	private readonly listeners: Array<(data: Readonly<T>, request: IRequest<R>) => void>;
-
-	constructor(private readonly key: string) {
-		if (keys.has(key)) {
-			throw new TypeError('Key ' + key + ' is in use');
+class Sender<T, R> {
+	constructor(public readonly key: string) {
+		if (senderKeys.has(key)) {
+			throw new Error("Sender " + key + " already exists");
 		}
 
-		keys.add(key);
-
-		this.listeners = [];
-
-		browser.runtime.onMessage.addListener(this.handleMessage);
+		senderKeys.add(key);
 	}
 
-	public async sendMessage(data: T, tabId?: number): Promise<IResponse<R>> {
+	async send(data: T, tabId?: number): Promise<IResponse<R>> {
 		const {key} = this;
-
-		if (!keys.has(key)) {
-			throw new TypeError('Message has been deleted.');
-		}
 
 		const coreMessage: ICoreMessage<T> = {
 			key,
@@ -44,10 +35,26 @@ export default class Message<T, R> {
 		}
 
 		if (!messageResponseValidator.validate(response)) {
-			return { status: Status.InvalidResponse };
+			throw new Error("Response is invalid");
 		}
 
 		return response;
+	}
+}
+
+class Stream<T, R> {
+	private readonly listeners: Array<(data: Readonly<T>, request: IRequest<R>) => void>;
+
+	constructor(public readonly key: string) {
+		if (streamKeys.has(key)) {
+			throw new Error("Stream " + key + " already exists");
+		}
+
+		streamKeys.add(key);
+
+		this.listeners = [];
+
+		browser.runtime.onMessage.addListener(this.handleMessage.bind(this));
 	}
 
 	public on(listener: (data: Readonly<T>, request: IRequest<R>) => void) {
@@ -128,9 +135,12 @@ export default class Message<T, R> {
 			}
 		});
 	};
+}
 
-	public destroy() {
-		browser.runtime.onMessage.removeListener(this.handleMessage);
-		keys.delete(this.key);
+export default {
+	Sender,
+	Stream,
+	createTube<T,R>(key: string) {
+		return [new Sender<T,R>(key), new Stream<T,R>(key)]
 	}
 }

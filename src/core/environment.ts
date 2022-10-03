@@ -1,35 +1,36 @@
-export enum EnvironmentType {
+enum EnvType {
 	Tab,
 	Popup,
 	Background,
 }
 
-function detectEnvironmentType() {
-	const isHttp = Boolean( /^https?:$/i.exec(location.protocol) );
+export default {
+	Types: EnvType,
+	currentEnv: (() => {
+		const isHttp = Boolean( /^https?:$/i.exec(location.protocol) );
 
-	if (isHttp) {
-		return EnvironmentType.Tab;
-	}
+		if (isHttp) {
+			return EnvType.Tab;
+		}
 
-	const isMozExtension = Boolean(/^moz-extension:$/i.exec(location.protocol));
+		const isMozExtension = Boolean( /^moz-extension:$/i.exec(location.protocol) );
 
-	if (!isMozExtension) {
-		throw new TypeError('Environment type is not recognized. Protocol not recognized');
-	}
+		if (!isMozExtension) {
+			throw new TypeError('Environment type is not recognized. Protocol not recognized');
+		}
 
-	const isBackground = location.pathname.includes('background');
+		const isBackground = location.pathname.includes('background');
 
-	if (isBackground) {
-		return EnvironmentType.Background;
-	}
+		if (isBackground) {
+			return EnvType.Background;
+		}
 
-	const isPopup = location.pathname.includes('popup');
+		const isPopup = location.pathname.includes('popup');
 
-	if (isPopup) {
-		return EnvironmentType.Popup;
-	}
+		if (isPopup) {
+			return EnvType.Popup;
+		}
 
-	throw new TypeError('Environment type is not recognized. Is extension page, but pathname is not valid');
+		throw new TypeError('Environment type is not recognized. Is extension page, but pathname is not valid');
+	})()
 }
-
-export const type = detectEnvironmentType();

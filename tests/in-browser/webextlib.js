@@ -4,10 +4,12 @@ var webextlib = (function (exports) {
     exports.Status = void 0;
     (function (Status) {
         Status[Status["InvalidResponse"] = 0] = "InvalidResponse";
-        Status[Status["Success"] = 1] = "Success";
-        Status[Status["Error"] = 2] = "Error";
-        Status[Status["Yes"] = 3] = "Yes";
-        Status[Status["No"] = 4] = "No";
+        Status[Status["InvalidRequest"] = 1] = "InvalidRequest";
+        Status[Status["Success"] = 2] = "Success";
+        Status[Status["Error"] = 3] = "Error";
+        Status[Status["Yes"] = 4] = "Yes";
+        Status[Status["No"] = 5] = "No";
+        Status[Status["Busy"] = 6] = "Busy";
     })(exports.Status || (exports.Status = {}));
 
     function isString(o) {
@@ -19,6 +21,9 @@ var webextlib = (function (exports) {
     const has = Function.prototype.call.bind(Object.prototype.hasOwnProperty);
     function inEnum(enu, value) {
         return Object.values(enu).includes(value);
+    }
+    function unique() {
+        return Date.now().toString(16) + '-' + Math.random().toString(16).slice(2);
     }
 
     const messageResponseValidator = {
@@ -34,24 +39,19 @@ var webextlib = (function (exports) {
         },
     };
 
-    const keys = new Set();
-    class Message {
+    const senderKeys = new Set();
+    const streamKeys = new Set();
+    class Sender {
         key;
-        listeners;
         constructor(key) {
             this.key = key;
-            if (keys.has(key)) {
-                throw new TypeError('Key ' + key + ' is in use');
+            if (senderKeys.has(key)) {
+                throw new Error("Sender " + key + " already exists");
             }
-            keys.add(key);
-            this.listeners = [];
-            browser.runtime.onMessage.addListener(this.handleMessage);
+            senderKeys.add(key);
         }
-        async sendMessage(data, tabId) {
+        async send(data, tabId) {
             const { key } = this;
-            if (!keys.has(key)) {
-                throw new TypeError('Message has been deleted.');
-            }
             const coreMessage = {
                 key,
                 data,
@@ -64,9 +64,22 @@ var webextlib = (function (exports) {
                 response = (await browser.runtime.sendMessage(coreMessage));
             }
             if (!messageResponseValidator.validate(response)) {
-                return { status: exports.Status.InvalidResponse };
+                throw new Error("Response is invalid");
             }
             return response;
+        }
+    }
+    class Stream {
+        key;
+        listeners;
+        constructor(key) {
+            this.key = key;
+            if (streamKeys.has(key)) {
+                throw new Error("Stream " + key + " already exists");
+            }
+            streamKeys.add(key);
+            this.listeners = [];
+            browser.runtime.onMessage.addListener(this.handleMessage.bind(this));
         }
         on(listener) {
             const { listeners } = this;
@@ -128,41 +141,95 @@ var webextlib = (function (exports) {
                 }
             });
         };
-        destroy() {
-            browser.runtime.onMessage.removeListener(this.handleMessage);
-            keys.delete(this.key);
-        }
     }
+    var messaging = {
+        Sender,
+        Stream,
+        createTube(key) {
+            return [new Sender(key), new Stream(key)];
+        }
+    };
 
-    exports.EnvironmentType = void 0;
-    (function (EnvironmentType) {
-        EnvironmentType[EnvironmentType["Tab"] = 0] = "Tab";
-        EnvironmentType[EnvironmentType["Popup"] = 1] = "Popup";
-        EnvironmentType[EnvironmentType["Background"] = 2] = "Background";
-    })(exports.EnvironmentType || (exports.EnvironmentType = {}));
-    function detectEnvironmentType() {
-        const isHttp = Boolean(/^https?:$/i.exec(location.protocol));
-        if (isHttp) {
-            return exports.EnvironmentType.Tab;
+    var EnvType;
+    (function (EnvType) {
+        EnvType[EnvType["Tab"] = 0] = "Tab";
+        EnvType[EnvType["Popup"] = 1] = "Popup";
+        EnvType[EnvType["Background"] = 2] = "Background";
+    })(EnvType || (EnvType = {}));
+    var environment = {
+        Types: EnvType,
+        currentEnv: (() => {
+            const isHttp = Boolean(/^https?:$/i.exec(location.protocol));
+            if (isHttp) {
+                return EnvType.Tab;
+            }
+            const isMozExtension = Boolean(/^moz-extension:$/i.exec(location.protocol));
+            if (!isMozExtension) {
+                throw new TypeError('Environment type is not recognized. Protocol not recognized');
+            }
+            const isBackground = location.pathname.includes('background');
+            if (isBackground) {
+                return EnvType.Background;
+            }
+            const isPopup = location.pathname.includes('popup');
+            if (isPopup) {
+                return EnvType.Popup;
+            }
+            throw new TypeError('Environment type is not recognized. Is extension page, but pathname is not valid');
+        })()
+    };
+
+    function getCodeForReturnMethod(key, fname = "$$$return") {
+        if (!Boolean(/^[a-z$_]+$/i.exec(fname))) {
+            throw new Error("Tabs.execute fname can have only these chars in name: english letters, $ and _.");
         }
-        const isMozExtension = Boolean(/^moz-extension:$/i.exec(location.protocol));
-        if (!isMozExtension) {
-            throw new TypeError('Environment type is not recognized. Protocol not recognized');
+        return `
+    var ${fname} = (function(){
+        var end = !1;
+
+        return executor;
+
+        function executor(arg) {
+            if (end) {
+                throw new TypeError("You can return value by ${fname} only once");
+            }
+            end = !0;
+            browser.runtime.sendMessage({
+                k: "${key}", d: arg
+            });
         }
-        const isBackground = location.pathname.includes('background');
-        if (isBackground) {
-            return exports.EnvironmentType.Background;
-        }
-        const isPopup = location.pathname.includes('popup');
-        if (isPopup) {
-            return exports.EnvironmentType.Popup;
-        }
-        throw new TypeError('Environment type is not recognized. Is extension page, but pathname is not valid');
+    })();
+
+
+    `;
     }
-    const type = detectEnvironmentType();
+    function execute(options) {
+        return new Promise(r => {
+            const messagingKey = unique() + "_TabsExecute";
+            browser.runtime.onMessage.addListener(listenToReturn);
+            browser.tabs.executeScript(options.tabId, {
+                code: getCodeForReturnMethod(messagingKey, options.fname) + options.code
+            });
+            setTimeout(() => {
+                browser.runtime.onMessage.removeListener(listenToReturn);
+            }, 60000);
+            function listenToReturn(message) {
+                if (!message)
+                    return;
+                if (message?.k === messagingKey) {
+                    browser.runtime.onMessage.removeListener(listenToReturn);
+                    r(message.d);
+                }
+            }
+        });
+    }
+    var tabs = {
+        execute
+    };
 
-    exports.CurrentEnvironment = type;
-    exports.Message = Message;
+    exports.Environment = environment;
+    exports.Messaging = messaging;
+    exports.Tabs = tabs;
 
     Object.defineProperty(exports, '__esModule', { value: true });
 

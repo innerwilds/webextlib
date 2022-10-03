@@ -11,3 +11,7 @@ export const has: (obj: any, key: string) => boolean = Function.prototype.call.b
 export function inEnum(enu: any, value: string | number): boolean {
     return Object.values(enu).includes(value);
 }
+
+export function unique() {
+    return Date.now().toString(16) + '-' + Math.random().toString(16).slice(2);
+}

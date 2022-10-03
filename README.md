@@ -10,8 +10,13 @@
 4. **CurrentEnvironment**. Тип нынешней среды.
 5. **IRequest** and **IResponse**. Для typescript.
 
+## namespace Tabs
+____
+
+**execute** - исполняет код во вкладке. Дополнительно встраивает метод $$$return в код для возврата значения  из кода (единожды).
+
 ## class Message
-___
+____
 
 Создаёт типизированный объект с ключом, по которому можно обмениваться сообщениями.
 Например:
@@ -60,7 +65,7 @@ const products = await productStream.sendMessage('get-products');
 ```
 
 ## namespace Environment
-___
+____
 **CurrentEnvironment** - константа указывающая в какой среде в данный момент исполняется код. Является значением перечисления EnvironmentType.
 **EnvironmentType** - перечисление типов сред: Background, Popup, Tab.
 
